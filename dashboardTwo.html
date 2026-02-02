@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIEM Threat Intelligence Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .dark-bg {
+            background-color: #0f172a;
+        }
+        .card-dark {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .status-critical {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        .status-high {
+            background-color: rgba(249, 115, 22, 0.1);
+            color: #f97316;
+        }
+        .status-medium {
+            background-color: rgba(234, 179, 8, 0.1);
+            color: #eab308;
+        }
+        .status-low {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        .confidence-critical { color: #ef4444; }
+        .confidence-high { color: #f97316; }
+        .confidence-medium { color: #eab308; }
+        .confidence-low { color: #3b82f6; }
+        .zone-critical { border-color: #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.1)); }
+        .zone-high { border-color: #f97316; background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), rgba(249, 115, 22, 0.1)); }
+        .zone-medium { border-color: #eab308; background: linear-gradient(135deg, rgba(234, 179, 8, 0.05), rgba(234, 179, 8, 0.1)); }
+        .zone-low { border-color: #3b82f6; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.1)); }
+        .compact-chart {
+            max-height: 100px !important;
+            margin-top: 8px;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 5px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .glow-critical { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+        .glow-high { box-shadow: 0 0 12px rgba(249, 115, 22, 0.2); }
+        .glow-medium { box-shadow: 0 0 8px rgba(234, 179, 8, 0.1); }
+        .glow-low { box-shadow: 0 0 5px rgba(59, 130, 246, 0.1); }
+    </style>
+</head>
+<body class="dark-bg text-gray-200">
+    <div class="container mx-auto p-4">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white">SIEM Threat Intelligence Dashboard</h1>
+                <p class="text-gray-400 text-sm">Monitoring malicious activities via PowerTel DNS Logs</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 pr-7 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option>Last 24 Hours</option>
+                        <option>Last 7 Days</option>
+                        <option selected>Last 30 Days</option>
+                        <option>Custom Range</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-2 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                    <i class="fas fa-sync-alt mr-1.5 text-xs"></i> Refresh
+                </button>
+            </div>
+        </header>
+
+        <!-- Threat Intelligence Overview -->
+        <div class="card-dark rounded-xl p-4 mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-white">Threat Intelligence Overview</h2>
+                <div class="flex items-center">
+                    <i class="fas fa-database text-blue-400 mr-2 text-sm"></i>
+                    <span class="text-sm text-gray-300">Data Source: PowerTel DNS Logs</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div class="bg-gray-800/30 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-white">48</p>
+                            <p class="text-xs text-gray-400">Total IOC Hits</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-red-900/30 flex items-center justify-center">
+                            <i class="fas fa-radar text-red-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400">
+                        <span class="text-green-400">↑ 12%</span> from last period
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800/30 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold confidence-critical">18</p>
+                            <p class="text-xs text-gray-400">Critical Confidence</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-red-900/30 flex items-center justify-center">
+                            <i class="fas fa-skull-crossbones text-red-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs">
+                        <span class="confidence-critical">90-100% confidence</span>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800/30 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold confidence-high">22</p>
+                            <p class="text-xs text-gray-400">High Confidence</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-orange-900/30 flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-orange-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs">
+                        <span class="confidence-high">70-89% confidence</span>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800/30 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold">8</p>
+                            <p class="text-xs text-gray-400">Unique Malicious Domains</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center">
+                            <i class="fas fa-globe text-purple-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400">
+                        Blocked in PowerTel DNS
+                    </div>
+                </div>
+            </div>
+            
+            <!-- IOC Hits Trend Chart -->
+            <div class="compact-chart">
+                <canvas id="iocTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <!-- IOC Details Panel -->
+            <div class="card-dark rounded-xl p-4 lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-white">IOC Hit Details (PowerTel DNS)</h2>
+                    <span class="px-2 py-1 bg-blue-900/30 text-blue-400 rounded text-xs">Live Feed</span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left py-2 px-2 text-gray-400">IOC Type</th>
+                                <th class="text-left py-2 px-2 text-gray-400">Value</th>
+                                <th class="text-left py-2 px-2 text-gray-400">Confidence</th>
+                                <th class="text-left py-2 px-2 text-gray-400">Hit Count</th>
+                                <th class="text-left py-2 px-2 text-gray-400">First Seen</th>
+                                <th class="text-left py-2 px-2 text-gray-400">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-globe text-red-400 mr-2"></i>
+                                        <span>Malicious Domain</span>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 font-mono text-xs">malware-c2.pwrtel.net</td>
+                                <td class="py-2 px-2">
+                                    <span class="confidence-critical font-bold">98%</span>
+                                </td>
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <span class="font-bold mr-2">142</span>
+                                        <div class="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full bg-red-500 rounded-full" style="width: 90%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 text-gray-400">2 hours ago</td>
+                                <td class="py-2 px-2">
+                                    <span class="status-critical px-2 py-0.5 rounded text-xs">Blocked</span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-server text-orange-400 mr-2"></i>
+                                        <span>C2 IP</span>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 font-mono text-xs">185.243.115.84</td>
+                                <td class="py-2 px-2">
+                                    <span class="confidence-high font-bold">85%</span>
+                                </td>
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <span class="font-bold mr-2">89</span>
+                                        <div class="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full bg-orange-500 rounded-full" style="width: 65%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 text-gray-400">5 hours ago</td>
+                                <td class="py-2 px-2">
+                                    <span class="status-high px-2 py-0.5 rounded text-xs">Alerted</span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-contract text-yellow-400 mr-2"></i>
+                                        <span>File Hash</span>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 font-mono text-xs">a3f5e8c71b2d...</td>
+                                <td class="py-2 px-2">
+                                    <span class="confidence-medium font-bold">75%</span>
+                                </td>
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <span class="font-bold mr-2">34</span>
+                                        <div class="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full bg-yellow-500 rounded-full" style="width: 40%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 text-gray-400">1 day ago</td>
+                                <td class="py-2 px-2">
+                                    <span class="status-medium px-2 py-0.5 rounded text-xs">Monitoring</span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-globe text-blue-400 mr-2"></i>
+                                        <span>Phishing Domain</span>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 font-mono text-xs">pwrtel-login.secure.biz</td>
+                                <td class="py-2 px-2">
+                                    <span class="confidence-low font-bold">65%</span>
+                                </td>
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <span class="font-bold mr-2">12</span>
+                                        <div class="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full bg-blue-500 rounded-full" style="width: 20%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 text-gray-400">2 days ago</td>
+                                <td class="py-2 px-2">
+                                    <span class="status-low px-2 py-0.5 rounded text-xs">Investigating</span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-server text-red-400 mr-2"></i>
+                                        <span>Botnet IP</span>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 font-mono text-xs">103.255.44.56</td>
+                                <td class="py-2 px-2">
+                                    <span class="confidence-critical font-bold">95%</span>
+                                </td>
+                                <td class="py-2 px-2">
+                                    <div class="flex items-center">
+                                        <span class="font-bold mr-2">67</span>
+                                        <div class="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full bg-red-500 rounded-full" style="width: 50%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-2 text-gray-400">3 hours ago</td>
+                                <td class="py-2 px-2">
+                                    <span class="status-critical px-2 py-0.5 rounded text-xs">Blocked</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 flex justify-between items-center text-xs text-gray-400">
+                    <div>
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Data sourced from PowerTel DNS query logs
+                    </div>
+                    <button class="text-blue-400 hover:text-blue-300">
+                        View All IOC Details →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Confidence Zoning Panel -->
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-white">Activity Zoning by Confidence</h2>
+                    <div class="flex items-center text-xs">
+                        <div class="w-2 h-2 bg-red-500 rounded-full mr-1"></div>
+                        <span class="mr-2">Critical</span>
+                        <div class="w-2 h-2 bg-orange-500 rounded-full mr-1"></div>
+                        <span>High</span>
+                    </div>
+                </div>
+                
+                <!-- Critical Zone -->
+                <div class="zone-critical border rounded-lg p-3 mb-3 glow-critical">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold confidence-critical">Critical Zone (90-100%)</h3>
+                        <span class="text-xs bg-red-900/30 text-red-400 px-2 py-0.5 rounded">18 Activities</span>
+                    </div>
+                    <p class="text-xs text-gray-300 mb-2">Confirmed malicious activities requiring immediate action</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="truncate">C2 Communication to malware-c2.pwrtel.net</span>
+                            <span class="confidence-critical font-bold">98%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="truncate">Data Exfiltration via 185.243.115.84</span>
+                            <span class="confidence-critical font-bold">95%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="truncate">DNS Tunneling detected</span>
+                            <span class="confidence-critical font-bold">92%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- High Zone -->
+                <div class="zone-high border rounded-lg p-3 mb-3 glow-high">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold confidence-high">High Zone (70-89%)</h3>
+                        <span class="text-xs bg-orange-900/30 text-orange-400 px-2 py-0.5 rounded">22 Activities</span>
+                    </div>
+                    <p class="text-xs text-gray-300 mb-2">Highly suspicious activities requiring investigation</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="truncate">Phishing domain resolution</span>
+                            <span class="confidence-high font-bold">85%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="truncate">Anomalous DNS query patterns</span>
+                            <span class="confidence-high font-bold">78%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="truncate">Suspicious TLD queries (.xyz)</span>
+                            <span class="confidence-high font-bold">72%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Medium Zone -->
+                <div class="zone-medium border rounded-lg p-3 mb-3 glow-medium">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold confidence-medium">Medium Zone (50-69%)</h3>
+                        <span class="text-xs bg-yellow-900/30 text-yellow-400 px-2 py-0.5 rounded">6 Activities</span>
+                    </div>
+                    <p class="text-xs text-gray-300 mb-2">Potential threats requiring monitoring</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="truncate">Unusual domain generation</span>
+                            <span class="confidence-medium font-bold">65%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="truncate">Suspicious subdomain queries</span>
+                            <span class="confidence-medium font-bold">58%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Low Zone -->
+                <div class="zone-low border rounded-lg p-3 glow-low">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold confidence-low">Low Zone (0-49%)</h3>
+                        <span class="text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">2 Activities</span>
+                    </div>
+                    <p class="text-xs text-gray-300 mb-2">Informational alerts for awareness</p>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="truncate">Uncommon but legitimate domains</span>
+                        <span class="confidence-low font-bold">35%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Section: DNS Analysis -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <!-- DNS Query Analysis -->
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-white">DNS Query Analysis</h2>
+                    <span class="px-2 py-1 bg-purple-900/30 text-purple-400 rounded text-xs">PowerTel DNS</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-800/30 p-3 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-lg bg-red-900/30 flex items-center justify-center mr-2">
+                                <i class="fas fa-ban text-red-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-lg font-bold">142</p>
+                                <p class="text-xs text-gray-400">Blocked Queries</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-800/30 p-3 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-lg bg-green-900/30 flex items-center justify-center mr-2">
+                                <i class="fas fa-shield-alt text-green-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-lg font-bold">98.7%</p>
+                                <p class="text-xs text-gray-400">Block Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="compact-chart">
+                    <canvas id="dnsChart"></canvas>
+                </div>
+                
+                <div class="mt-4 text-xs text-gray-400">
+                    <div class="flex items-center mb-1">
+                        <i class="fas fa-filter text-blue-400 mr-2"></i>
+                        <span>Top blocked malicious domains from PowerTel DNS logs:</span>
+                    </div>
+                    <div class="space-y-1 ml-4">
+                        <div class="flex justify-between">
+                            <span class="truncate">malware-c2.pwrtel.net</span>
+                            <span class="text-red-400">142 hits</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="truncate">data-exfil.xyz</span>
+                            <span class="text-red-400">89 hits</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="truncate">phish.pwrtel-login.com</span>
+                            <span class="text-orange-400">67 hits</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IOC Source & Timeline -->
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-white">IOC Source & Timeline</h2>
+                    <div class="flex space-x-2">
+                        <button class="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs">Sources</button>
+                        <button class="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs">Timeline</button>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between items-center text-sm mb-2">
+                        <span class="text-gray-400">IOC Sources Distribution</span>
+                        <span class="font-bold">100%</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full flex">
+                            <div class="bg-blue-500" style="width: 65%"></div>
+                            <div class="bg-green-500" style="width: 20%"></div>
+                            <div class="bg-purple-500" style="width: 10%"></div>
+                            <div class="bg-yellow-500" style="width: 5%"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>PowerTel DNS</span>
+                        <span>Threat Feeds</span>
+                        <span>Internal</span>
+                        <span>Other</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-3 max-h-48 overflow-y-auto scrollbar-custom">
+                    <div class="p-3 bg-gray-800/30 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium text-sm">New IOC Added to Blocklist</p>
+                                <p class="text-xs text-gray-400">malware-c2.pwrtel.net (98% confidence)</p>
+                            </div>
+                            <span class="text-xs text-gray-400">10 min ago</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-gray-800/30 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium text-sm">IOC Confidence Updated</p>
+                                <p class="text-xs text-gray-400">185.243.115.84 increased to 85%</p>
+                            </div>
+                            <span class="text-xs text-gray-400">2 hrs ago</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-gray-800/30 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium text-sm">DNS Query Blocked</p>
+                                <p class="text-xs text-gray-400">data-exfil.xyz from 10.2.45.67</p>
+                            </div>
+                            <span class="text-xs text-gray-400">5 hrs ago</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-gray-800/30 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium text-sm">New Threat Feed Integrated</p>
+                                <p class="text-xs text-gray-400">Added 24 new IOCs to PowerTel DNS</p>
+                            </div>
+                            <span class="text-xs text-gray-400">1 day ago</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-3 border-t border-gray-800 text-xs text-gray-400">
+                    <div class="flex items-center">
+                        <i class="fas fa-database text-blue-400 mr-2"></i>
+                        <span>Total IOC Database: 12,458 indicators</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-xs border-t border-gray-800 pt-4">
+            <div class="flex justify-center items-center mb-1">
+                <i class="fas fa-shield-alt text-blue-400 mr-2"></i>
+                <p>SIEM Threat Intelligence Dashboard • PowerTel DNS Log Integration • Last Updated: <span id="current-time"></span></p>
+            </div>
+            <p>Confidence-based zoning of malicious activities for targeted response</p>
+        </footer>
+    </div>
+
+    <script>
+        // Set current time
+        const now = new Date();
+        document.getElementById('current-time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // IOC Trend Chart - Compact
+        const iocTrendCtx = document.getElementById('iocTrendChart').getContext('2d');
+        const iocTrendChart = new Chart(iocTrendCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                datasets: [
+                    {
+                        label: 'Critical IOCs',
+                        data: [2, 5, 8, 12, 15, 18],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 2
+                    },
+                    {
+                        label: 'High IOCs',
+                        data: [3, 6, 10, 15, 19, 22],
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.05)',
+                        borderWidth: 1.5,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 9
+                            },
+                            boxWidth: 8,
+                            boxHeight: 8
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#334155',
+                            display: false
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 8
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#334155',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 8
+                            },
+                            maxTicksLimit: 5
+                        }
+                    }
+                }
+            }
+        });
+        
+        // DNS Chart - Compact
+        const dnsCtx = document.getElementById('dnsChart').getContext('2d');
+        const dnsChart = new Chart(dnsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Malware', 'Phishing', 'C2', 'Botnet', 'Spam'],
+                datasets: [{
+                    label: 'Blocked Queries',
+                    data: [142, 67, 89, 45, 23],
+                    backgroundColor: [
+                        '#ef4444',
+                        '#f97316',
+                        '#dc2626',
+                        '#b91c1c',
+                        '#991b1b'
+                    ],
+                    borderColor: '#1e293b',
+                    borderWidth: 0.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#334155',
+                            display: false
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 8
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#334155',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 8
+                            },
+                            callback: function(value) {
+                                if (value >= 1000) {
+                                    return (value / 1000) + 'k';
+                                }
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Interactive functionality
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function() {
+                if(this.textContent.includes('Refresh')) {
+                    // Simulate refresh
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Refreshing...';
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        // Update time
+                        const newTime = new Date();
+                        document.getElementById('current-time').textContent = newTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    }, 800);
+                } else if(this.textContent.includes('View All')) {
+                    alert('In a real application, this would expand to show all IOC details.');
+                }
+            });
+        });
+        
+        // Add hover effects to table rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', function() {
+                const iocValue = this.querySelector('td:nth-child(2)').textContent;
+                const confidence = this.querySelector('td:nth-child(3) span').textContent;
+                alert(`Selected IOC: ${iocValue}\nConfidence: ${confidence}\n\nDetailed analysis would appear here.`);
+            });
+        });
+    </script>
+</body>
+</html>
