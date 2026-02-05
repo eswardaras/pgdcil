@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIEM - System Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .dark-bg {
+            background-color: #0f172a;
+        }
+        .nav-dark {
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+        .card-dark {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .nav-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #3b82f6;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .tab-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .toggle-bg {
+            background-color: #4b5563;
+        }
+        .toggle-checked {
+            background-color: #3b82f6;
+        }
+        .toggle-knob {
+            background-color: white;
+            transform: translateX(0);
+            transition: transform 0.3s;
+        }
+        .toggle-checked .toggle-knob {
+            transform: translateX(1.25rem);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-open .accordion-content {
+            max-height: 500px;
+        }
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="dark-bg text-gray-200">
+    <!-- Horizontal Navigation Menu -->
+    <nav class="nav-dark sticky top-0 z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <!-- Left: Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white">SIEM Threat Intel</h1>
+                        <p class="text-xs text-gray-400">PowerTel Security</p>
+                    </div>
+                </div>
+
+                <!-- Center: Navigation Links -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="dashboard.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                    </a>
+                    <a href="threat-intel.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-radar mr-2"></i>Threat Intel
+                    </a>
+                    <a href="dns-analytics.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-globe mr-2"></i>DNS Analytics
+                    </a>
+                    <a href="user-management.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-users-cog mr-2"></i>User Management
+                    </a>
+                    <a href="reports.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-chart-bar mr-2"></i>Reports
+                    </a>
+                    <a href="settings.html" class="nav-active relative px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </a>
+                </div>
+
+                <!-- Right: User & Controls -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <button class="relative p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg">
+                            <i class="fas fa-bell"></i>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">2</span>
+                        </button>
+                    </div>
+                    
+                    <div class="hidden md:block h-6 w-px bg-gray-700"></div>
+                    
+                    <div class="flex items-center space-x-2 cursor-pointer" id="userMenu">
+                        <div class="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center">
+                            <i class="fas fa-user text-blue-400"></i>
+                        </div>
+                        <div class="hidden md:block">
+                            <p class="text-sm font-medium">Security Admin</p>
+                            <p class="text-xs text-gray-400">System Administrator</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white">System Settings</h1>
+                <p class="text-gray-400 text-sm">Configure SIEM platform settings and preferences</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center text-sm" id="backupBtn">
+                    <i class="fas fa-download mr-2"></i> Backup Config
+                </button>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm" id="saveAllBtn">
+                    <i class="fas fa-save mr-2"></i> Save All Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings Tabs -->
+        <div class="flex space-x-1 mb-6 overflow-x-auto">
+            <button class="tab-active px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap" data-tab="general">
+                <i class="fas fa-cog mr-2"></i>General
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="notifications">
+                <i class="fas fa-bell mr-2"></i>Notifications
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="integrations">
+                <i class="fas fa-plug mr-2"></i>Integrations
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="security">
+                <i class="fas fa-shield-alt mr-2"></i>Security
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="dns">
+                <i class="fas fa-globe mr-2"></i>DNS Settings
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="api">
+                <i class="fas fa-code mr-2"></i>API
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="advanced">
+                <i class="fas fa-sliders-h mr-2"></i>Advanced
+            </button>
+        </div>
+
+        <!-- General Settings Tab (Active by default) -->
+        <div id="general-tab" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <!-- Left Column -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- System Preferences -->
+                    <div class="card-dark rounded-xl p-5">
+                        <h2 class="text-lg font-bold text-white mb-4">System Preferences</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Time Zone</p>
+                                    <p class="text-sm text-gray-400">Set system time zone for log timestamps</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                                    <option>UTC (Coordinated Universal Time)</option>
+                                    <option selected>Asia/Kolkata (IST)</option>
+                                    <option>America/New_York (EST)</option>
+                                    <option>Europe/London (GMT)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Data Retention Period</p>
+                                    <p class="text-sm text-gray-400">How long to keep logs and alerts</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                                    <option>30 days</option>
+                                    <option selected>90 days</option>
+                                    <option>180 days</option>
+                                    <option>1 year</option>
+                                    <option>2 years</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Auto-refresh Interval</p>
+                                    <p class="text-sm text-gray-400">Dashboard auto-refresh frequency</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                                    <option>30 seconds</option>
+                                    <option selected>1 minute</option>
+                                    <option>5 minutes</option>
+                                    <option>10 minutes</option>
+                                    <option>Manual refresh only</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Default Dashboard</p>
+                                    <p class="text-sm text-gray-400">Which dashboard to show on login</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                                    <option selected>Threat Intelligence Overview</option>
+                                    <option>DNS Analytics Dashboard</option>
+                                    <option>Network Monitoring</option>
+                                    <option>Security Alerts</option>
+                                    <option>Custom Dashboard</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Display Settings -->
+                    <div class="card-dark rounded-xl p-5">
+                        <h2 class="text-lg font-bold text-white mb-4">Display Settings</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Theme</p>
+                                    <p class="text-sm text-gray-400">Interface color scheme</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm">
+                                        Dark (Active)
+                                    </button>
+                                    <button class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm">
+                                        Light
+                                    </button>
+                                    <button class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm">
+                                        Auto
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Items Per Page</p>
+                                    <p class="text-sm text-gray-400">Number of items in tables/lists</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                                    <option>10 items</option>
+                                    <option selected>25 items</option>
+                                    <option>50 items</option>
+                                    <option>100 items</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Chart Animation</p>
+                                    <p class="text-sm text-gray-400">Enable/disable chart animations</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="chartAnimation" checked>
+                                    <label for="chartAnimation" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Compact Mode</p>
+                                    <p class="text-sm text-gray-400">Reduce spacing for more content</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="compactMode">
+                                    <label for="compactMode" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-6">
+                    <!-- System Status -->
+                    <div class="card-dark rounded-xl p-5">
+                        <h2 class="text-lg font-bold text-white mb-4">System Status</h2>
+                        
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-green-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-server text-green-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">SIEM Core</p>
+                                        <p class="text-xs text-gray-400">Version 3.2.1</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">Running</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-database text-blue-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">Database</p>
+                                        <p class="text-xs text-gray-400">Elasticsearch 8.11</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">Connected</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-purple-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-plug text-purple-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">DNS Log Ingestion</p>
+                                        <p class="text-xs text-gray-400">PowerTel DNS</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">Active</span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-yellow-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-bolt text-yellow-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">Threat Intel Feeds</p>
+                                        <p class="text-xs text-gray-400">12 active feeds</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">Synced</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-gray-800">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-400">System Uptime</span>
+                                <span class="font-medium">45 days, 12:34:21</span>
+                            </div>
+                            <div class="flex justify-between text-sm mt-1">
+                                <span class="text-gray-400">Last Backup</span>
+                                <span class="font-medium">Yesterday, 02:00 AM</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card-dark rounded-xl p-5">
+                        <h2 class="text-lg font-bold text-white mb-4">Quick Actions</h2>
+                        
+                        <div class="space-y-3">
+                            <button class="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-sync-alt text-blue-400"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <p class="font-medium">Restart Services</p>
+                                        <p class="text-xs text-gray-400">Restart SIEM services</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </button>
+                            
+                            <button class="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-green-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-download text-green-400"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <p class="font-medium">Clear Cache</p>
+                                        <p class="text-xs text-gray-400">Clear system cache</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </button>
+                            
+                            <button class="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-red-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-trash text-red-400"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <p class="font-medium">Purge Old Data</p>
+                                        <p class="text-xs text-gray-400">Remove data beyond retention</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </button>
+                            
+                            <button class="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-purple-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-file-export text-purple-400"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <p class="font-medium">Generate Report</p>
+                                        <p class="text-xs text-gray-400">Create system health report</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Settings Tab (Hidden by default) -->
+        <div id="notifications-tab" class="tab-content hidden">
+            <div class="card-dark rounded-xl p-5 mb-6">
+                <h2 class="text-lg font-bold text-white mb-4">Notification Preferences</h2>
+                
+                <div class="space-y-6">
+                    <!-- Email Notifications -->
+                    <div class="accordion">
+                        <button class="accordion-header w-full flex items-center justify-between p-3 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition">
+                            <div class="flex items-center">
+                                <i class="fas fa-envelope text-blue-400 mr-3"></i>
+                                <div class="text-left">
+                                    <p class="font-medium">Email Notifications</p>
+                                    <p class="text-xs text-gray-400">Configure email alerts</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-400 transition"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="p-4 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium">Critical Alerts</p>
+                                        <p class="text-sm text-gray-400">Send email for critical security events</p>
+                                    </div>
+                                    <div class="toggle-switch relative inline-block w-12 h-6">
+                                        <input type="checkbox" class="opacity-0 w-0 h-0" id="emailCritical" checked>
+                                        <label for="emailCritical" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                            <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium">Daily Digest</p>
+                                        <p class="text-sm text-gray-400">Send daily summary email at 8:00 AM</p>
+                                    </div>
+                                    <div class="toggle-switch relative inline-block w-12 h-6">
+                                        <input type="checkbox" class="opacity-0 w-0 h-0" id="emailDigest" checked>
+                                        <label for="emailDigest" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                            <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium">Weekly Reports</p>
+                                        <p class="text-sm text-gray-400">Send weekly security report</p>
+                                    </div>
+                                    <div class="toggle-switch relative inline-block w-12 h-6">
+                                        <input type="checkbox" class="opacity-0 w-0 h-0" id="emailWeekly" checked>
+                                        <label for="emailWeekly" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                            <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Notification Email</label>
+                                    <input type="email" value="security-team@powertel.security" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 input-glow">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- In-App Notifications -->
+                    <div class="accordion">
+                        <button class="accordion-header w-full flex items-center justify-between p-3 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition">
+                            <div class="flex items-center">
+                                <i class="fas fa-bell text-yellow-400 mr-3"></i>
+                                <div class="text-left">
+                                    <p class="font-medium">In-App Notifications</p>
+                                    <p class="text-xs text-gray-400">Dashboard notification settings</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-400 transition"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="p-4 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium">Show Desktop Notifications</p>
+                                        <p class="text-sm text-gray-400">Show browser notifications</p>
+                                    </div>
+                                    <div class="toggle-switch relative inline-block w-12 h-6">
+                                        <input type="checkbox" class="opacity-0 w-0 h-0" id="desktopNotifications" checked>
+                                        <label for="desktopNotifications" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                            <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium">Play Sound on Alert</p>
+                                        <p class="text-sm text-gray-400">Play sound for critical alerts</p>
+                                    </div>
+                                    <div class="toggle-switch relative inline-block w-12 h-6">
+                                        <input type="checkbox" class="opacity-0 w-0 h-0" id="alertSound">
+                                        <label for="alertSound" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                            <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Alert Sound</label>
+                                    <select class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option>Default Alert</option>
+                                        <option selected>Soft Chime</option>
+                                        <option>Security Alert</option>
+                                        <option>Notification Beep</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alert Thresholds -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-white">Alert Thresholds</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-gray-800/30 p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">High Severity Threshold</label>
+                                <input type="number" value="10" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Count">
+                                <p class="text-xs text-gray-400 mt-1">Alerts per hour to trigger notification</p>
+                            </div>
+                            
+                            <div class="bg-gray-800/30 p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Medium Severity Threshold</label>
+                                <input type="number" value="25" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Count">
+                                <p class="text-xs text-gray-400 mt-1">Alerts per hour to trigger notification</p>
+                            </div>
+                            
+                            <div class="bg-gray-800/30 p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Notification Cooldown</label>
+                                <input type="number" value="5" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Minutes">
+                                <p class="text-xs text-gray-400 mt-1">Minimum time between notifications</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integrations Settings Tab (Hidden by default) -->
+        <div id="integrations-tab" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Active Integrations -->
+                <div class="card-dark rounded-xl p-5">
+                    <h2 class="text-lg font-bold text-white mb-4">Active Integrations</h2>
+                    
+                    <div class="space-y-4">
+                        <!-- PowerTel DNS Integration -->
+                        <div class="p-4 bg-gray-800/30 rounded-lg border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-globe text-blue-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">PowerTel DNS</p>
+                                        <p class="text-sm text-gray-400">DNS log ingestion</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">Active</span>
+                            </div>
+                            <div class="text-sm text-gray-300">
+                                <p>Last sync: 2 minutes ago</p>
+                                <p>Logs processed: 42,857 today</p>
+                            </div>
+                            <div class="flex space-x-2 mt-3">
+                                <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">Configure</button>
+                                <button class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs">Test Connection</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Threat Intelligence Feeds -->
+                        <div class="p-4 bg-gray-800/30 rounded-lg border-l-4 border-green-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-green-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-radar text-green-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">Threat Intel Feeds</p>
+                                        <p class="text-sm text-gray-400">12 active feeds</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">Active</span>
+                            </div>
+                            <div class="text-sm text-gray-300">
+                                <p>Last update: 1 hour ago</p>
+                                <p>IOCs: 12,458 indicators</p>
+                            </div>
+                            <div class="flex space-x-2 mt-3">
+                                <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">Manage Feeds</button>
+                                <button class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs">Force Update</button>
+                            </div>
+                        </div>
+                        
+                        <!-- SIEM Integration -->
+                        <div class="p-4 bg-gray-800/30 rounded-lg border-l-4 border-purple-500">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-shield-alt text-purple-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">SIEM Core</p>
+                                        <p class="text-sm text-gray-400">Alert correlation engine</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">Active</span>
+                            </div>
+                            <div class="text-sm text-gray-300">
+                                <p>Alerts processed: 24 today</p>
+                                <p>Rules active: 142 of 150</p>
+                            </div>
+                            <div class="flex space-x-2 mt-3">
+                                <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">Rules</button>
+                                <button class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs">Statistics</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Integrations -->
+                <div class="card-dark rounded-xl p-5">
+                    <h2 class="text-lg font-bold text-white mb-4">Available Integrations</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-yellow-900/30 flex items-center justify-center mr-3">
+                                        <i class="fab fa-microsoft text-yellow-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">Microsoft Sentinel</p>
+                                        <p class="text-sm text-gray-400">Azure SIEM integration</p>
+                                    </div>
+                                </div>
+                                <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">Connect</button>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-red-900/30 flex items-center justify-center mr-3">
+                                        <i class="fab fa-aws text-red-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">AWS CloudTrail</p>
+                                        <p class="text-sm text-gray-400">AWS log integration</p>
+                                    </div>
+                                </div>
+                                <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">Connect</button>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center mr-3">
+                                        <i class="fab fa-salesforce text-blue-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">Salesforce</p>
+                                        <p class="text-sm text-gray-400">CRM security events</p>
+                                    </div>
+                                </div>
+                                <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">Connect</button>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-green-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-mobile-alt text-green-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">Mobile Threat Defense</p>
+                                        <p class="text-sm text-gray-400">Mobile device security</p>
+                                    </div>
+                                </div>
+                                <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">Connect</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h3 class="font-bold text-white mb-3">Add Custom Integration</h3>
+                        <div class="space-y-3">
+                            <input type="text" placeholder="Integration Name" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <input type="text" placeholder="API Endpoint" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <input type="text" placeholder="API Key" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm">
+                                <i class="fas fa-plus mr-2"></i> Add Integration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings Tab (Hidden by default) -->
+        <div id="security-tab" class="tab-content hidden">
+            <div class="card-dark rounded-xl p-5 mb-6">
+                <h2 class="text-lg font-bold text-white mb-6">Security Settings</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Authentication -->
+                    <div class="space-y-6">
+                        <h3 class="font-bold text-white">Authentication</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Two-Factor Authentication</p>
+                                    <p class="text-sm text-gray-400">Require 2FA for all users</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="require2FA" checked>
+                                    <label for="require2FA" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Password Complexity</p>
+                                    <p class="text-sm text-gray-400">Minimum password requirements</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option>Basic (8 characters)</option>
+                                    <option selected>Standard (12 chars, mixed)</option>
+                                    <option>Strong (16 chars, special)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Session Timeout</p>
+                                    <p class="text-sm text-gray-400">Auto-logout after inactivity</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option>15 minutes</option>
+                                    <option selected>30 minutes</option>
+                                    <option>1 hour</option>
+                                    <option>4 hours</option>
+                                    <option>8 hours (no timeout)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Failed Login Attempts</p>
+                                    <p class="text-sm text-gray-400">Lock account after N attempts</p>
+                                </div>
+                                <input type="number" value="5" class="w-20 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-center">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Network Security -->
+                    <div class="space-y-6">
+                        <h3 class="font-bold text-white">Network Security</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">IP Whitelisting</p>
+                                    <p class="text-sm text-gray-400">Restrict access to specific IPs</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="ipWhitelist">
+                                    <label for="ipWhitelist" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">HTTPS Enforcement</p>
+                                    <p class="text-sm text-gray-400">Force HTTPS connections</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="httpsEnforce" checked>
+                                    <label for="httpsEnforce" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">API Rate Limiting</p>
+                                    <p class="text-sm text-gray-400">Limit API requests per minute</p>
+                                </div>
+                                <input type="number" value="100" class="w-20 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-center">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Allowed IP Ranges</label>
+                                <textarea class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 h-24" placeholder="Enter IP addresses or ranges (one per line)">
+10.0.0.0/8
+192.168.1.0/24
+172.16.0.0/12</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security Audit Log -->
+                <div class="mt-8 pt-6 border-t border-gray-800">
+                    <h3 class="font-bold text-white mb-4">Security Audit Log</h3>
+                    <div class="bg-gray-800/30 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="text-sm">
+                                <p class="font-medium">Last security audit: 2 days ago</p>
+                                <p class="text-gray-400">No critical issues found</p>
+                            </div>
+                            <button class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
+                                Run Security Audit
+                            </button>
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            <p><i class="fas fa-check text-green-400 mr-2"></i> All security settings compliant</p>
+                            <p><i class="fas fa-check text-green-400 mr-2"></i> Encryption enabled for all data</p>
+                            <p><i class="fas fa-check text-green-400 mr-2"></i> Access logs being monitored</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DNS Settings Tab (Hidden by default) -->
+        <div id="dns-tab" class="tab-content hidden">
+            <div class="card-dark rounded-xl p-5 mb-6">
+                <h2 class="text-lg font-bold text-white mb-6">PowerTel DNS Settings</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- DNS Log Ingestion -->
+                    <div class="space-y-6">
+                        <h3 class="font-bold text-white">DNS Log Ingestion</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Log Ingestion Rate</p>
+                                    <p class="text-sm text-gray-400">Maximum logs per second</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option>100 logs/sec</option>
+                                    <option>500 logs/sec</option>
+                                    <option selected>1000 logs/sec</option>
+                                    <option>5000 logs/sec</option>
+                                    <option>Unlimited</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Real-time Processing</p>
+                                    <p class="text-sm text-gray-400">Process logs in real-time</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="dnsRealtime" checked>
+                                    <label for="dnsRealtime" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">DNS Query Retention</p>
+                                    <p class="text-sm text-gray-400">How long to keep DNS logs</p>
+                                </div>
+                                <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option>7 days</option>
+                                    <option selected>30 days</option>
+                                    <option>90 days</option>
+                                    <option>180 days</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">DNS Server IPs</label>
+                                <input type="text" value="10.10.1.10, 10.10.1.11, 10.10.1.12" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- DNS Threat Detection -->
+                    <div class="space-y-6">
+                        <h3 class="font-bold text-white">DNS Threat Detection</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Malicious Domain Blocking</p>
+                                    <p class="text-sm text-gray-400">Block known malicious domains</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="dnsBlocking" checked>
+                                    <label for="dnsBlocking" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">DNS Tunneling Detection</p>
+                                    <p class="text-sm text-gray-400">Detect DNS tunneling attempts</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="dnsTunneling" checked>
+                                    <label for="dnsTunneling" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">Suspicious TLD Alerting</p>
+                                    <p class="text-sm text-gray-400">Alert on suspicious TLDs</p>
+                                </div>
+                                <div class="toggle-switch relative inline-block w-12 h-6">
+                                    <input type="checkbox" class="opacity-0 w-0 h-0" id="tldAlerting" checked>
+                                    <label for="tldAlerting" class="toggle-bg block w-12 h-6 rounded-full cursor-pointer">
+                                        <span class="toggle-knob absolute left-1 top-1 w-4 h-4 rounded-full transition"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Suspicious TLDs</label>
+                                <input type="text" value=".xyz, .top, .club, .win, .bid" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- DNS Statistics -->
+                <div class="mt-8 pt-6 border-t border-gray-800">
+                    <h3 class="font-bold text-white mb-4">DNS Statistics</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-gray-800/30 p-4 rounded-lg">
+                            <p class="text-2xl font-bold text-white">42.8K</p>
+                            <p class="text-xs text-gray-400">Queries Today</p>
+                        </div>
+                        <div class="bg-gray-800/30 p-4 rounded-lg">
+                            <p class="text-2xl font-bold text-green-400">98.7%</p>
+                            <p class="text-xs text-gray-400">Block Rate</p>
+                        </div>
+                        <div class="bg-gray-800/30 p-4 rounded-lg">
+                            <p class="text-2xl font-bold text-blue-400">142</p>
+                            <p class="text-xs text-gray-400">Malicious Blocks</p>
+                        </div>
+                        <div class="bg-gray-800/30 p-4 rounded-lg">
+                            <p class="text-2xl font-bold text-yellow-400">2.3s</p>
+                            <p class="text-xs text-gray-400">Avg Processing Time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-xs border-t border-gray-800 pt-4">
+            <div class="flex justify-center items-center mb-1">
+                <i class="fas fa-cog text-blue-400 mr-2"></i>
+                <p>SIEM System Settings • Version 3.2.1 • Last Updated: <span id="current-time"></span></p>
+            </div>
+            <p>Configuration changes require administrator privileges</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-gray-900 border border-gray-800 rounded-lg p-4 shadow-xl z-50 transform translate-y-full opacity-0 transition-all duration-300 hidden">
+        <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-green-900/30 flex items-center justify-center mr-3">
+                <i class="fas fa-check text-green-400"></i>
+            </div>
+            <div>
+                <p class="font-medium text-white">Settings Saved</p>
+                <p class="text-sm text-gray-400">Your changes have been applied successfully</p>
+            </div>
+            <button class="ml-auto text-gray-400 hover:text-white" onclick="hideToast()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Set current time
+        const now = new Date();
+        document.getElementById('current-time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // Tab Switching
+        const tabs = document.querySelectorAll('[data-tab]');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('tab-active', 'bg-blue-600', 'text-white'));
+                tabs.forEach(t => t.classList.add('bg-gray-800', 'text-gray-300'));
+                
+                // Add active class to clicked tab
+                tab.classList.remove('bg-gray-800', 'text-gray-300');
+                tab.classList.add('tab-active', 'bg-blue-600', 'text-white');
+                
+                // Hide all tab contents
+                tabContents.forEach(content => content.classList.add('hidden'));
+                
+                // Show selected tab content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.remove('hidden');
+            });
+        });
+        
+        // Toggle Switch Functionality
+        document.querySelectorAll('.toggle-switch input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const label = this.nextElementSibling;
+                if (this.checked) {
+                    label.classList.add('toggle-checked');
+                } else {
+                    label.classList.remove('toggle-checked');
+                }
+            });
+            
+            // Initialize toggle states
+            if (checkbox.checked) {
+                checkbox.nextElementSibling.classList.add('toggle-checked');
+            }
+        });
+        
+        // Accordion Functionality
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const accordion = header.parentElement;
+                const content = header.nextElementSibling;
+                const icon = header.querySelector('.fa-chevron-down');
+                
+                if (accordion.classList.contains('accordion-open')) {
+                    accordion.classList.remove('accordion-open');
+                    icon.classList.remove('rotate-180');
+                } else {
+                    accordion.classList.add('accordion-open');
+                    icon.classList.add('rotate-180');
+                }
+            });
+        });
+        
+        // Save All Changes Button
+        document.getElementById('saveAllBtn').addEventListener('click', () => {
+            showToast('Settings Saved', 'Your changes have been applied successfully', 'success');
+        });
+        
+        // Backup Config Button
+        document.getElementById('backupBtn').addEventListener('click', () => {
+            showToast('Backup Started', 'System configuration backup in progress...', 'info');
+            setTimeout(() => {
+                showToast('Backup Complete', 'Configuration backup saved successfully', 'success');
+            }, 2000);
+        });
+        
+        // Quick Actions
+        document.querySelectorAll('.card-dark button').forEach(button => {
+            if (button.textContent.includes('Restart Services')) {
+                button.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to restart SIEM services? This may cause temporary disruption.')) {
+                        showToast('Services Restarting', 'SIEM services are being restarted...', 'warning');
+                    }
+                });
+            } else if (button.textContent.includes('Clear Cache')) {
+                button.addEventListener('click', () => {
+                    showToast('Cache Cleared', 'System cache has been cleared successfully', 'success');
+                });
+            } else if (button.textContent.includes('Purge Old Data')) {
+                button.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to purge data beyond retention period? This action cannot be undone.')) {
+                        showToast('Data Purging', 'Purging old data...', 'warning');
+                    }
+                });
+            } else if (button.textContent.includes('Generate Report')) {
+                button.addEventListener('click', () => {
+                    showToast('Report Generation', 'Generating system health report...', 'info');
+                });
+            }
+        });
+        
+        // Integration Connect Buttons
+        document.querySelectorAll('#integrations-tab button').forEach(button => {
+            if (button.textContent === 'Connect') {
+                button.addEventListener('click', () => {
+                    const integration = button.closest('.bg-gray-800\\/30').querySelector('.font-bold').textContent;
+                    showToast('Integration Request', `Connecting to ${integration}...`, 'info');
+                });
+            }
+        });
+        
+        // Toast Notification Functions
+        function showToast(title, message, type) {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('.fa-check');
+            const bgColor = type === 'success' ? 'bg-green-900/30' : 
+                           type === 'warning' ? 'bg-yellow-900/30' : 
+                           type === 'info' ? 'bg-blue-900/30' : 'bg-gray-900/30';
+            
+            toast.querySelector('.font-medium').textContent = title;
+            toast.querySelector('.text-gray-400').textContent = message;
+            toast.querySelector('.flex.items-center.justify-center').className = `w-8 h-8 rounded-full ${bgColor} flex items-center justify-center mr-3`;
+            
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-full', 'opacity-0');
+            }, 10);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(hideToast, 5000);
+        }
+        
+        function hideToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('translate-y-full', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 300);
+        }
+        
+        // Initialize some settings
+        document.querySelectorAll('.accordion').forEach((accordion, index) => {
+            if (index === 0) {
+                accordion.classList.add('accordion-open');
+                accordion.querySelector('.fa-chevron-down').classList.add('rotate-180');
+            }
+        });
+    </script>
+</body>
+</html>
