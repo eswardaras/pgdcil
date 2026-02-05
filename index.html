@@ -3,670 +3,1310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asset Security Dashboard</title>
+    <title>SIEM Threat Intelligence - Secure Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         }
-        .dark-bg {
-            background-color: #0f172a;
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(239, 68, 68, 0.1) 0%, transparent 50%);
         }
-        .card-dark {
-            background-color: #1e293b;
-            border: 1px solid #334155;
+        .login-card {
+            background-color: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+                        0 0 100px rgba(59, 130, 246, 0.1);
         }
-        .hover-glow:hover {
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        .security-pattern {
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.1) 2px, transparent 2px);
+            background-size: 40px 40px;
         }
-        .grid-border {
-            border-color: #334155;
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3),
+                        0 0 20px rgba(59, 130, 246, 0.2);
         }
-        .tab-active {
-            border-bottom: 2px solid #3b82f6;
+        .btn-glow {
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-glow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+        .logo-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+            }
+        }
+        .floating-icon {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        .mfa-step {
+            transform: scale(0.95);
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+        .mfa-step.active {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .otp-digit {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            text-align: center;
+            margin: 0 5px;
+            border: 2px solid #334155;
+            border-radius: 10px;
+            background: #1e293b;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .otp-digit:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            outline: none;
+        }
+        .otp-digit.filled {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .countdown {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
             color: #3b82f6;
         }
-        .status-active {
-            background-color: rgba(34, 197, 94, 0.1);
-            color: #22c55e;
+        .mfa-method {
+            border: 2px solid #334155;
+            transition: all 0.3s ease;
         }
-        .status-warning {
-            background-color: rgba(234, 179, 8, 0.1);
-            color: #eab308;
+        .mfa-method:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
         }
-        .status-critical {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
+        .mfa-method.active {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.2);
         }
-        .status-neutral {
-            background-color: rgba(148, 163, 184, 0.1);
-            color: #94a3b8;
+        .qr-code {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
         }
-        .scrollbar-custom::-webkit-scrollbar {
-            width: 6px;
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
         }
-        .scrollbar-custom::-webkit-scrollbar-track {
-            background: #1e293b;
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
-        .scrollbar-custom::-webkit-scrollbar-thumb {
-            background: #475569;
-            border-radius: 3px;
+        .shake {
+            animation: shake 0.5s ease-in-out;
         }
-        .compact-chart {
-            max-height: 120px !important;
-            margin-top: 10px;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
-        .compact-chart-lg {
-            max-height: 140px !important;
-            margin-top: 10px;
+        .redirect-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
         }
     </style>
 </head>
-<body class="dark-bg text-gray-200">
-    <div class="container mx-auto p-4">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-bold text-white">Asset Security Dashboard</h1>
-                <p class="text-gray-400 text-sm">Monitoring critical assets and security events</p>
-            </div>
-            <div class="flex items-center space-x-3">
-                <div class="relative">
-                    <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 pr-7 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        <option>Last 24 Hours</option>
-                        <option>Last 7 Days</option>
-                        <option selected>Last 30 Days</option>
-                        <option>Custom Range</option>
-                    </select>
-                    <i class="fas fa-chevron-down absolute right-2 top-2.5 text-gray-400 text-xs"></i>
-                </div>
-                <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
-                    <i class="fas fa-sync-alt mr-1.5 text-xs"></i> Refresh
-                </button>
-            </div>
-        </header>
+<body class="text-gray-200">
+    <!-- Background Elements -->
+    <div class="fixed inset-0 security-pattern opacity-10"></div>
+    
+    <!-- Floating Security Icons -->
+    <div class="fixed top-10 left-10 text-blue-400 opacity-20 floating-icon" style="animation-delay: 0s;">
+        <i class="fas fa-shield-alt text-4xl"></i>
+    </div>
+    <div class="fixed top-20 right-20 text-red-400 opacity-20 floating-icon" style="animation-delay: 1s;">
+        <i class="fas fa-radar text-3xl"></i>
+    </div>
+    <div class="fixed bottom-20 left-20 text-green-400 opacity-20 floating-icon" style="animation-delay: 2s;">
+        <i class="fas fa-lock text-4xl"></i>
+    </div>
+    <div class="fixed bottom-10 right-10 text-purple-400 opacity-20 floating-icon" style="animation-delay: 3s;">
+        <i class="fas fa-mobile-alt text-3xl"></i>
+    </div>
 
-        <!-- Main Dashboard Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            <!-- Asset Overview -->
-            <div class="card-dark rounded-xl p-4 lg:col-span-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-white">Asset Overview</h2>
-                    <span class="px-2 py-0.5 bg-blue-900/30 text-blue-400 rounded-full text-xs">42 Assets</span>
+    <!-- Main Login Container -->
+    <div class="login-container p-4">
+        <div class="login-card rounded-2xl w-full max-w-md overflow-hidden">
+            <!-- Header with Logo -->
+            <div class="p-8 text-center border-b border-gray-800">
+                <!-- PGDCIl Logo -->
+                <div class="flex flex-col items-center justify-center mb-6">
+                    <div class="relative mb-4">
+                        <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center logo-pulse">
+                            <!-- PGDCIl Logo - Custom Design -->
+                            <div class="text-white font-bold text-2xl">PGDCIl</div>
+                        </div>
+                        <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-xs"></i>
+                        </div>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white">SIEM Threat Intelligence</h1>
+                    <p class="text-gray-400 text-sm mt-2">Multi-Factor Authentication Required</p>
                 </div>
                 
-                <div class="mb-4">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-gray-400 text-sm">Total Assets</span>
-                        <span class="font-bold">42</span>
+                <div class="flex items-center justify-center space-x-4">
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-xs text-gray-400">Encrypted</span>
                     </div>
-                    <div class="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                        <div class="h-full bg-blue-500 rounded-full" style="width: 100%"></div>
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                        <span class="text-xs text-gray-400">MFA Enabled</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                        <span class="text-xs text-gray-400">SOC 2 Compliant</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multi-Step Authentication Process -->
+            <div class="p-8">
+                <!-- Step Indicator -->
+                <div class="flex justify-between items-center mb-8 relative">
+                    <div class="absolute top-4 left-0 right-0 h-0.5 bg-gray-800 -z-10"></div>
+                    
+                    <div class="flex flex-col items-center">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center mb-2">
+                            1
+                        </div>
+                        <span class="text-xs text-gray-400">Credentials</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center mb-2">
+                            2
+                        </div>
+                        <span class="text-xs text-gray-400">MFA Method</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center mb-2">
+                            3
+                        </div>
+                        <span class="text-xs text-gray-400">Verify</span>
+                    </div>
+                </div>
+
+                <!-- Step 1: Username & Password -->
+                <div id="step1" class="mfa-step active slide-in">
+                    <h2 class="text-xl font-bold text-white mb-6">Enter Your Credentials</h2>
+                    
+                    <form id="credentialForm" class="space-y-6">
+                        <!-- Username Field -->
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-300 mb-2">
+                                <i class="fas fa-user mr-2 text-blue-400"></i>Username
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    id="username" 
+                                    name="username"
+                                    placeholder="security.admin"
+                                    class="w-full px-4 py-3 pl-12 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none input-glow transition"
+                                    required
+                                    autocomplete="username"
+                                    autofocus
+                                >
+                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+                                <i class="fas fa-key mr-2 text-blue-400"></i>Password
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    type="password" 
+                                    id="password" 
+                                    name="password"
+                                    placeholder="••••••••••••"
+                                    class="w-full px-4 py-3 pl-12 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none input-glow transition"
+                                    required
+                                    autocomplete="current-password"
+                                >
+                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                                <button 
+                                    type="button" 
+                                    id="togglePassword"
+                                    class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Remember Me & Forgot Password -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input 
+                                    type="checkbox" 
+                                    id="remember"
+                                    name="remember"
+                                    class="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 rounded focus:ring-blue-500 focus:ring-2"
+                                >
+                                <label for="remember" class="ml-2 text-sm text-gray-300">
+                                    Remember this device (30 days)
+                                </label>
+                            </div>
+                            <a href="#" class="text-sm text-blue-400 hover:text-blue-300 transition" id="forgotPassword">
+                                Forgot password?
+                            </a>
+                        </div>
+
+                        <!-- Next Button -->
+                        <button 
+                            type="submit"
+                            class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl btn-glow transition flex items-center justify-center"
+                        >
+                            Continue to MFA
+                            <i class="fas fa-arrow-right ml-3"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Step 2: MFA Method Selection -->
+                <div id="step2" class="mfa-step hidden">
+                    <h2 class="text-xl font-bold text-white mb-6">Choose Authentication Method</h2>
+                    <p class="text-gray-400 text-sm mb-6">Select how you want to verify your identity</p>
+                    
+                    <div class="space-y-4">
+                        <!-- Authenticator App -->
+                        <div class="mfa-method p-4 rounded-xl cursor-pointer" data-method="authenticator">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-lg bg-blue-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-mobile-alt text-2xl text-blue-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-white">Authenticator App</p>
+                                    <p class="text-sm text-gray-400">Google Authenticator, Microsoft Authenticator, etc.</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- SMS Verification -->
+                        <div class="mfa-method p-4 rounded-xl cursor-pointer" data-method="sms">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-lg bg-green-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-sms text-2xl text-green-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-white">Text Message (SMS)</p>
+                                    <p class="text-sm text-gray-400">Send code to your registered mobile</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Email Verification -->
+                        <div class="mfa-method p-4 rounded-xl cursor-pointer" data-method="email">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-lg bg-purple-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-envelope text-2xl text-purple-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-white">Email Verification</p>
+                                    <p class="text-sm text-gray-400">Send code to your registered email</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Security Key -->
+                        <div class="mfa-method p-4 rounded-xl cursor-pointer" data-method="securityKey">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-lg bg-yellow-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-key text-2xl text-yellow-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-white">Security Key</p>
+                                    <p class="text-sm text-gray-400">YubiKey, Google Titan, etc.</p>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Back Button -->
+                    <button 
+                        type="button"
+                        id="backToStep1"
+                        class="w-full mt-6 py-3 px-4 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl transition flex items-center justify-center"
+                    >
+                        <i class="fas fa-arrow-left mr-3"></i>
+                        Back to Credentials
+                    </button>
+                </div>
+
+                <!-- Step 3: MFA Verification -->
+                <div id="step3" class="mfa-step hidden">
+                    <!-- Authenticator App Verification -->
+                    <div id="authenticator-verify" class="hidden">
+                        <h2 class="text-xl font-bold text-white mb-6">Authenticator App Verification</h2>
+                        <p class="text-gray-400 text-sm mb-6">Enter the 6-digit code from your authenticator app</p>
+                        
+                        <div class="text-center mb-8">
+                            <div class="qr-code mx-auto mb-4">
+                                <!-- QR Code Placeholder -->
+                                <div class="w-48 h-48 bg-gray-300 flex items-center justify-center rounded">
+                                    <div class="text-center">
+                                        <i class="fas fa-qrcode text-4xl text-gray-700 mb-2"></i>
+                                        <p class="text-xs text-gray-700">QR Code for<br>security.admin@powertel</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Scan QR code with your authenticator app</p>
+                            <p class="text-xs text-gray-500 mt-2">Or enter manually: <code class="bg-gray-800 px-2 py-1 rounded">JBSWY3DPEHPK3PXP</code></p>
+                        </div>
+                        
+                        <!-- OTP Input -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-3">
+                                Enter 6-digit code
+                            </label>
+                            <div class="flex justify-center" id="otpContainer">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="0">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="1">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="2">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="3">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="4">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="5">
+                            </div>
+                        </div>
+                        
+                        <!-- Countdown Timer -->
+                        <div class="text-center mb-6">
+                            <p class="text-sm text-gray-400">Code expires in: <span id="countdown" class="countdown">02:59</span></p>
+                            <button type="button" id="resendCode" class="text-sm text-blue-400 hover:text-blue-300 mt-2 hidden">
+                                Resend code
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- SMS Verification -->
+                    <div id="sms-verify" class="hidden">
+                        <h2 class="text-xl font-bold text-white mb-6">SMS Verification</h2>
+                        <p class="text-gray-400 text-sm mb-6">We sent a 6-digit code to your mobile ending in <span class="text-white">••••89</span></p>
+                        
+                        <!-- OTP Input -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-3">
+                                Enter SMS code
+                            </label>
+                            <div class="flex justify-center" id="smsOtpContainer">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="0">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="1">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="2">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="3">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="4">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="5">
+                            </div>
+                        </div>
+                        
+                        <!-- Countdown Timer -->
+                        <div class="text-center mb-6">
+                            <p class="text-sm text-gray-400">Code expires in: <span id="smsCountdown" class="countdown">04:59</span></p>
+                            <button type="button" id="resendSms" class="text-sm text-blue-400 hover:text-blue-300 mt-2">
+                                Resend SMS
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Email Verification -->
+                    <div id="email-verify" class="hidden">
+                        <h2 class="text-xl font-bold text-white mb-6">Email Verification</h2>
+                        <p class="text-gray-400 text-sm mb-6">We sent a 6-digit code to <span class="text-white">s••••••n@powertel.security</span></p>
+                        
+                        <!-- OTP Input -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-3">
+                                Enter email code
+                            </label>
+                            <div class="flex justify-center" id="emailOtpContainer">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="0">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="1">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="2">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="3">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="4">
+                                <input type="text" maxlength="1" class="otp-digit" data-index="5">
+                            </div>
+                        </div>
+                        
+                        <!-- Countdown Timer -->
+                        <div class="text-center mb-6">
+                            <p class="text-sm text-gray-400">Code expires in: <span id="emailCountdown" class="countdown">09:59</span></p>
+                            <button type="button" id="resendEmail" class="text-sm text-blue-400 hover:text-blue-300 mt-2">
+                                Resend email
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Security Key Verification -->
+                    <div id="securityKey-verify" class="hidden">
+                        <h2 class="text-xl font-bold text-white mb-6">Security Key Verification</h2>
+                        <p class="text-gray-400 text-sm mb-6">Insert your security key and tap the button when ready</p>
+                        
+                        <div class="text-center mb-8">
+                            <div class="w-32 h-32 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
+                                <i class="fas fa-key text-5xl text-yellow-400"></i>
+                            </div>
+                            <p class="text-sm text-gray-400">Waiting for security key...</p>
+                            <div class="mt-4">
+                                <div class="inline-block animate-pulse">
+                                    <i class="fas fa-circle text-blue-400 text-xs mr-1"></i>
+                                    <i class="fas fa-circle text-blue-400 text-xs mr-1"></i>
+                                    <i class="fas fa-circle text-blue-400 text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button 
+                            type="button"
+                            id="simulateSecurityKey"
+                            class="w-full py-3 px-4 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-xl transition flex items-center justify-center"
+                        >
+                            <i class="fas fa-key mr-3"></i>
+                            Simulate Security Key Tap
+                        </button>
+                    </div>
+                    
+                    <!-- Verify Button -->
+                    <button 
+                        type="button"
+                        id="verifyMfa"
+                        class="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold rounded-xl btn-glow transition flex items-center justify-center"
+                    >
+                        <i class="fas fa-shield-alt mr-3"></i>
+                        Verify & Access Dashboard
+                    </button>
+                    
+                    <!-- Back Button -->
+                    <button 
+                        type="button"
+                        id="backToStep2"
+                        class="w-full mt-4 py-3 px-4 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl transition flex items-center justify-center"
+                    >
+                        <i class="fas fa-arrow-left mr-3"></i>
+                        Choose Different Method
+                    </button>
+                </div>
+
+                <!-- Alternative Login -->
+                <div class="mt-8 pt-6 border-t border-gray-800">
+                    <p class="text-center text-sm text-gray-400 mb-4">Having trouble with MFA?</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button 
+                            type="button"
+                            class="py-2 px-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium rounded-xl transition flex items-center justify-center text-sm"
+                            id="useBackupCode"
+                        >
+                            <i class="fas fa-file-alt text-blue-400 mr-2"></i>
+                            Backup Code
+                        </button>
+                        <button 
+                            type="button"
+                            class="py-2 px-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium rounded-xl transition flex items-center justify-center text-sm"
+                            id="contactSupport"
+                        >
+                            <i class="fas fa-headset text-green-400 mr-2"></i>
+                            Contact Support
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-6 bg-gray-900/50 border-t border-gray-800 text-center">
+                <div class="flex items-center justify-center space-x-6 mb-4">
+                    <div class="flex items-center text-xs text-gray-500">
+                        <i class="fas fa-shield-check text-green-400 mr-2"></i>
+                        <span>MFA Required</span>
+                    </div>
+                    <div class="flex items-center text-xs text-gray-500">
+                        <i class="fas fa-clock text-blue-400 mr-2"></i>
+                        <span>Session: 30 min</span>
+                    </div>
+                    <div class="flex items-center text-xs text-gray-500">
+                        <i class="fas fa-user-lock text-purple-400 mr-2"></i>
+                        <span>Zero Trust Enabled</span>
                     </div>
                 </div>
                 
+                <p class="text-xs text-gray-600">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i>
+                    Multi-factor authentication is mandatory for all SIEM platform access.
+                </p>
+                <p class="text-xs text-gray-600 mt-2">
+                    © 2024 PGDCIl Security Operations Center. All rights reserved.
+                </p>
+                
+                <!-- Security Status -->
+                <div class="mt-4 flex justify-center space-x-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="MFA Active"></div>
+                    <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse" style="animation-delay: 0.2s;" title="Encryption On"></div>
+                    <div class="w-3 h-3 bg-purple-500 rounded-full animate-pulse" style="animation-delay: 0.4s;" title="Session Secure"></div>
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" style="animation-delay: 0.6s;" title="System Online"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-800">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-blue-900/30 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-fingerprint text-3xl text-blue-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2" id="modalTitle">Verifying Identity</h3>
+                <p class="text-gray-400" id="modalMessage">Multi-factor authentication in progress</p>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Progress Steps -->
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between p-2.5 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 rounded-lg bg-blue-900/30 flex items-center justify-center mr-2">
-                                <i class="fas fa-server text-blue-400 text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-sm">Servers</p>
-                                <p class="text-xs text-gray-400">12 devices</p>
-                            </div>
-                        </div>
-                        <span class="status-active px-1.5 py-0.5 rounded text-xs">Active</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-300">Credentials validation</span>
+                        <span class="text-green-400" id="modalStep1"><i class="fas fa-check-circle"></i></span>
                     </div>
-                    
-                    <div class="flex items-center justify-between p-2.5 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 rounded-lg bg-green-900/30 flex items-center justify-center mr-2">
-                                <i class="fas fa-laptop text-green-400 text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-sm">Workstations</p>
-                                <p class="text-xs text-gray-400">24 devices</p>
-                            </div>
-                        </div>
-                        <span class="status-warning px-1.5 py-0.5 rounded text-xs">2 Issues</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-300">MFA method selection</span>
+                        <span class="text-gray-500" id="modalStep2"><i class="fas fa-circle"></i></span>
                     </div>
-                    
-                    <div class="flex items-center justify-between p-2.5 bg-gray-800/50 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 rounded-lg bg-purple-900/30 flex items-center justify-center mr-2">
-                                <i class="fas fa-network-wired text-purple-400 text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-sm">Network Devices</p>
-                                <p class="text-xs text-gray-400">6 devices</p>
-                            </div>
-                        </div>
-                        <span class="status-active px-1.5 py-0.5 rounded text-xs">Active</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-300">MFA verification</span>
+                        <span class="text-gray-500" id="modalStep3"><i class="fas fa-circle"></i></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-300">Session establishment</span>
+                        <span class="text-gray-500" id="modalStep4"><i class="fas fa-circle"></i></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-300">Dashboard loading</span>
+                        <span class="text-gray-500" id="modalStep5"><i class="fas fa-circle"></i></span>
                     </div>
                 </div>
                 
-                <button class="w-full mt-4 py-2 border border-gray-700 rounded-lg hover:bg-gray-800/50 transition text-sm flex items-center justify-center">
-                    <i class="fas fa-list mr-1.5 text-xs"></i> View All Assets
-                </button>
+                <!-- Loading Animation -->
+                <div class="mt-6">
+                    <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div id="modalProgressBar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-300"></div>
+                    </div>
+                    <p class="text-center text-xs text-gray-400 mt-2" id="modalStatusText">
+                        Starting authentication...
+                    </p>
+                </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Log Ingestion & User Access -->
-            <div class="card-dark rounded-xl p-4 lg:col-span-2">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-white">Log Ingestion & User Access</h2>
-                    <div class="flex space-x-1">
-                        <button class="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs">Logs</button>
-                        <button class="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs">Users</button>
-                    </div>
+    <!-- Backup Code Modal -->
+    <div id="backupModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-800">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-yellow-900/30 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-file-alt text-3xl text-yellow-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Backup Code</h3>
+                <p class="text-gray-400">Enter your 8-digit backup code</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Backup Code</label>
+                    <input 
+                        type="text" 
+                        id="backupCode"
+                        maxlength="8"
+                        placeholder="XXXX-XXXX"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none input-glow text-center font-mono text-lg"
+                    >
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Log Ingestion -->
-                    <div>
-                        <h3 class="font-bold mb-3 text-white text-sm">Log Ingestion Status</h3>
-                        <div class="space-y-2 mb-3">
-                            <div class="flex justify-between items-center text-sm">
-                                <span>Successful</span>
-                                <div class="flex items-center">
-                                    <span class="font-bold mr-1.5">98.2%</span>
-                                    <span class="status-active px-1.5 py-0.5 rounded text-xs">Normal</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-center text-sm">
-                                <span>Failed</span>
-                                <div class="flex items-center">
-                                    <span class="font-bold mr-1.5">1.8%</span>
-                                    <span class="status-warning px-1.5 py-0.5 rounded text-xs">Warning</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-center text-sm">
-                                <span>Today's Total</span>
-                                <span class="font-bold">42.8K</span>
-                            </div>
-                        </div>
-                        
-                        <div class="compact-chart">
-                            <canvas id="logChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- User Access -->
-                    <div>
-                        <h3 class="font-bold mb-3 text-white text-sm">User Access Frequency</h3>
-                        <div class="mb-3">
-                            <div class="flex justify-between mb-1">
-                                <span class="text-gray-400 text-xs">Unique Users</span>
-                                <span class="font-bold">187</span>
-                            </div>
-                            <div class="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                                <div class="h-full bg-green-500 rounded-full" style="width: 75%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-2 max-h-44 overflow-y-auto scrollbar-custom mb-2">
-                            <div class="flex justify-between items-center p-2 bg-gray-800/30 rounded text-sm">
-                                <div class="flex items-center">
-                                    <div class="w-6 h-6 rounded-full bg-blue-900/30 flex items-center justify-center mr-2">
-                                        <i class="fas fa-user text-xs"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium">admin.johnson</p>
-                                        <p class="text-xs text-gray-400">2 hrs ago</p>
-                                    </div>
-                                </div>
-                                <span class="font-bold">342</span>
-                            </div>
-                            
-                            <div class="flex justify-between items-center p-2 bg-gray-800/30 rounded text-sm">
-                                <div class="flex items-center">
-                                    <div class="w-6 h-6 rounded-full bg-green-900/30 flex items-center justify-center mr-2">
-                                        <i class="fas fa-user text-xs"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium">sarah.devops</p>
-                                        <p class="text-xs text-gray-400">5 hrs ago</p>
-                                    </div>
-                                </div>
-                                <span class="font-bold">278</span>
-                            </div>
-                            
-                            <div class="flex justify-between items-center p-2 bg-gray-800/30 rounded text-sm">
-                                <div class="flex items-center">
-                                    <div class="w-6 h-6 rounded-full bg-purple-900/30 flex items-center justify-center mr-2">
-                                        <i class="fas fa-user text-xs"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium">michael.sec</p>
-                                        <p class="text-xs text-gray-400">1 day ago</p>
-                                    </div>
-                                </div>
-                                <span class="font-bold">156</span>
-                            </div>
-                            
-                            <div class="flex justify-between items-center p-2 bg-gray-800/30 rounded text-sm">
-                                <div class="flex items-center">
-                                    <div class="w-6 h-6 rounded-full bg-yellow-900/30 flex items-center justify-center mr-2">
-                                        <i class="fas fa-user text-xs"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium">lisa.network</p>
-                                        <p class="text-xs text-gray-400">3 hrs ago</p>
-                                    </div>
-                                </div>
-                                <span class="font-bold">132</span>
-                            </div>
-                        </div>
-                        
-                        <button class="w-full py-1.5 border border-gray-700 rounded-lg hover:bg-gray-800/50 transition text-xs">
-                            View All User Details
+                <div class="text-xs text-gray-500">
+                    <p><i class="fas fa-info-circle mr-2"></i> Each backup code can only be used once</p>
+                    <p><i class="fas fa-exclamation-triangle mr-2"></i> Generate new codes after use</p>
+                </div>
+                
+                <div class="pt-4">
+                    <div class="flex justify-end space-x-3">
+                        <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm" onclick="hideBackupModal()">
+                            Cancel
+                        </button>
+                        <button class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm" onclick="useBackupCode()">
+                            Use Backup Code
                         </button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Threat Intelligence & Security Alerts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-            <!-- Threat Intelligence -->
-            <div class="card-dark rounded-xl p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-white">Threat Intelligence</h2>
-                    <span class="px-2 py-0.5 bg-red-900/30 text-red-400 rounded-full text-xs">18 IOCs Hit</span>
-                </div>
-                
-                <div class="mb-4">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-gray-400 text-sm">Today's IOC Hits</span>
-                        <span class="font-bold">18</span>
-                    </div>
-                    <div class="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                        <div class="h-full bg-red-500 rounded-full" style="width: 65%"></div>
-                    </div>
-                </div>
-                
-                <div class="space-y-3 mb-3">
-                    <div class="p-3 bg-gray-800/30 rounded-lg border-l-2 border-red-500 text-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-bold">Malicious IP: 192.168.45.23</p>
-                                <p class="text-xs text-gray-400 mt-0.5">Known C2 server - 12 hits</p>
-                            </div>
-                            <span class="status-critical px-1.5 py-0.5 rounded text-xs">Critical</span>
-                        </div>
-                    </div>
-                    
-                    <div class="p-3 bg-gray-800/30 rounded-lg border-l-2 border-yellow-500 text-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-bold">Domain: malware-traffic.net</p>
-                                <p class="text-xs text-gray-400 mt-0.5">Recently registered - 4 hits</p>
-                            </div>
-                            <span class="status-warning px-1.5 py-0.5 rounded text-xs">Warning</span>
-                        </div>
-                    </div>
-                    
-                    <div class="p-3 bg-gray-800/30 rounded-lg border-l-2 border-blue-500 text-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-bold">File Hash: a3f5e... (Mimikatz)</p>
-                                <p class="text-xs text-gray-400 mt-0.5">Credential tool - 2 hits</p>
-                            </div>
-                            <span class="status-neutral px-1.5 py-0.5 rounded text-xs">Monitor</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="compact-chart">
-                    <canvas id="iocChart"></canvas>
-                </div>
+    <!-- Redirect Overlay -->
+    <div id="redirectOverlay" class="redirect-overlay hidden">
+        <div class="text-center">
+            <div class="w-24 h-24 rounded-full bg-blue-900/30 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-tachometer-alt text-4xl text-blue-400"></i>
             </div>
-
-            <!-- Security Alerts -->
-            <div class="card-dark rounded-xl p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-white">Security Alerts (SIEM)</h2>
-                    <span class="px-2 py-0.5 bg-orange-900/30 text-orange-400 rounded-full text-xs">24 Alerts</span>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div class="bg-gray-800/50 p-3 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-lg bg-red-900/30 flex items-center justify-center mr-2">
-                                <i class="fas fa-hammer text-red-400"></i>
-                            </div>
-                            <div>
-                                <p class="text-xl font-bold">8</p>
-                                <p class="text-xs text-gray-400">Brute Force</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gray-800/50 p-3 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-lg bg-yellow-900/30 flex items-center justify-center mr-2">
-                                <i class="fas fa-key text-yellow-400"></i>
-                            </div>
-                            <div>
-                                <p class="text-xl font-bold">12</p>
-                                <p class="text-xs text-gray-400">Auth Failures</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gray-800/50 p-3 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center mr-2">
-                                <i class="fas fa-comments text-purple-400"></i>
-                            </div>
-                            <div>
-                                <p class="text-xl font-bold">3</p>
-                                <p class="text-xs text-gray-400">Malicious Comms</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gray-800/50 p-3 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center mr-2">
-                                <i class="fas fa-database text-blue-400"></i>
-                            </div>
-                            <div>
-                                <p class="text-xl font-bold">1</p>
-                                <p class="text-xs text-gray-400">Data Exfiltration</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="space-y-2 max-h-44 overflow-y-auto scrollbar-custom">
-                    <div class="p-2.5 bg-gray-800/30 rounded-lg text-sm">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Brute Force Attack Detected</p>
-                                <p class="text-xs text-gray-400">Server-04 | 15 min ago</p>
-                            </div>
-                            <span class="status-critical px-1.5 py-0.5 rounded text-xs">High</span>
-                        </div>
-                    </div>
-                    
-                    <div class="p-2.5 bg-gray-800/30 rounded-lg text-sm">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Multiple Auth Failures</p>
-                                <p class="text-xs text-gray-400">Workstation-12 | 1 hr ago</p>
-                            </div>
-                            <span class="status-warning px-1.5 py-0.5 rounded text-xs">Medium</span>
-                        </div>
-                    </div>
-                    
-                    <div class="p-2.5 bg-gray-800/30 rounded-lg text-sm">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Suspicious Outbound Comms</p>
-                                <p class="text-xs text-gray-400">Server-08 | 3 hrs ago</p>
-                            </div>
-                            <span class="status-warning px-1.5 py-0.5 rounded text-xs">Medium</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Network Monitoring -->
-        <div class="card-dark rounded-xl p-4 mb-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-white">Network Monitoring</h2>
-                <div class="flex space-x-1">
-                    <button class="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs">Outbound</button>
-                    <button class="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs">DNS</button>
-                    <button class="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs">Ports</button>
-                </div>
+            <h2 class="text-2xl font-bold text-white mb-4">Authentication Successful!</h2>
+            <p class="text-gray-400 text-lg mb-6">Redirecting to Threat Intelligence Dashboard...</p>
+            
+            <div class="w-64 h-2 bg-gray-800 rounded-full overflow-hidden mx-auto mb-4">
+                <div id="redirectProgress" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-1000"></div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-gray-800/30 p-4 rounded-lg">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-white text-sm">Outbound Anomalies</h3>
-                        <span class="text-xl font-bold text-red-400">16</span>
-                    </div>
-                    <p class="text-gray-400 text-xs mb-3">Communications to unknown IPs</p>
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between text-xs">
-                            <span>185.243.115.84</span>
-                            <span class="text-red-400">8 attempts</span>
-                        </div>
-                        <div class="flex justify-between text-xs">
-                            <span>45.133.206.29</span>
-                            <span class="text-red-400">5 attempts</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-gray-800/30 p-4 rounded-lg">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-white text-sm">Unknown DNS Queries</h3>
-                        <span class="text-xl font-bold text-yellow-400">9</span>
-                    </div>
-                    <p class="text-gray-400 text-xs mb-3">Non-PowerTel DNS queries</p>
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between text-xs">
-                            <span>suspicious-domain.tk</span>
-                            <span class="text-yellow-400">4 queries</span>
-                        </div>
-                        <div class="flex justify-between text-xs">
-                            <span>data-exfil.biz</span>
-                            <span class="text-yellow-400">3 queries</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-gray-800/30 p-4 rounded-lg">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-white text-sm">Unknown Port Comms</h3>
-                        <span class="text-xl font-bold text-blue-400">7</span>
-                    </div>
-                    <p class="text-gray-400 text-xs mb-3">Non-standard port usage</p>
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between text-xs">
-                            <span>Port 4443</span>
-                            <span class="text-blue-400">5 connections</span>
-                        </div>
-                        <div class="flex justify-between text-xs">
-                            <span>Port 8081</span>
-                            <span class="text-blue-400">2 connections</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <p class="text-sm text-gray-500" id="redirectCountdown">Starting in 3 seconds...</p>
             
-            <div class="compact-chart-lg">
-                <canvas id="networkChart"></canvas>
+            <div class="mt-8">
+                <a href="dashboard.html" class="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition">
+                    <i class="fas fa-external-link-alt mr-2"></i>
+                    Go to Dashboard Now
+                </a>
             </div>
         </div>
-
-        <!-- Footer -->
-        <footer class="text-center text-gray-500 text-xs border-t border-gray-800 pt-4">
-            <p>Asset Security Dashboard • Last Updated: <span id="current-time"></span> • Powered by SIEM Integration</p>
-            <p class="mt-1">Data reflects monitoring for the last 30 days</p>
-        </footer>
     </div>
 
     <script>
-        // Set current time
-        const now = new Date();
-        document.getElementById('current-time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        // Log Ingestion Chart - Compact
-        const logCtx = document.getElementById('logChart').getContext('2d');
-        const logChart = new Chart(logCtx, {
-            type: 'line',
-            data: {
-                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-                datasets: [{
-                    label: 'Logs Ingested',
-                    data: [1200, 3500, 7200, 9800, 12500, 14200],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 1.5,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 2,
-                    pointHoverRadius: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            color: '#334155',
-                            display: false
-                        },
-                        ticks: {
-                            color: '#94a3b8',
-                            font: {
-                                size: 9
-                            }
-                        }
-                    },
-                    y: {
-                        grid: {
-                            color: '#334155',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: '#94a3b8',
-                            font: {
-                                size: 9
-                            },
-                            callback: function(value) {
-                                if (value >= 1000) {
-                                    return (value / 1000) + 'k';
-                                }
-                                return value;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // IOC Chart - Compact
-        const iocCtx = document.getElementById('iocChart').getContext('2d');
-        const iocChart = new Chart(iocCtx, {
-            type: 'bar',
-            data: {
-                labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
-                datasets: [{
-                    label: 'IOC Hits',
-                    data: [5, 8, 12, 18, 14, 9, 6],
-                    backgroundColor: '#ef4444',
-                    borderColor: '#dc2626',
-                    borderWidth: 0.5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            color: '#334155',
-                            display: false
-                        },
-                        ticks: {
-                            color: '#94a3b8',
-                            font: {
-                                size: 9
-                            }
-                        }
-                    },
-                    y: {
-                        grid: {
-                            color: '#334155',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: '#94a3b8',
-                            font: {
-                                size: 9
-                            },
-                            maxTicksLimit: 5
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Network Chart - Compact
-        const networkCtx = document.getElementById('networkChart').getContext('2d');
-        const networkChart = new Chart(networkCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Outbound', 'DNS', 'Ports'],
-                datasets: [{
-                    data: [16, 9, 7],
-                    backgroundColor: [
-                        '#ef4444',
-                        '#eab308',
-                        '#3b82f6'
-                    ],
-                    borderColor: '#1e293b',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '60%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#94a3b8',
-                            padding: 10,
-                            font: {
-                                size: 10
-                            },
-                            boxWidth: 10,
-                            boxHeight: 10
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Tab switching functionality
-        document.querySelectorAll('button').forEach(button => {
-            button.addEventListener('click', function() {
-                if(this.textContent === 'View All Assets' || 
-                   this.textContent === 'View All User Details' ||
-                   this.textContent.includes('Refresh')) {
-                    // Simulate loading action
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Loading...';
+        // Current step tracking
+        let currentStep = 1;
+        let selectedMfaMethod = null;
+        let countdownInterval = null;
+        let backupCodes = ['7B9C-2D8F', 'A3E5-1C7B', 'F4D9-6A2E'];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if there's a redirect parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('redirect') === 'dashboard') {
+                // Auto-fill demo credentials and simulate login
+                setTimeout(() => {
+                    document.getElementById('username').value = 'security.admin';
+                    document.getElementById('password').value = 'P@ssw0rd123!';
+                    document.getElementById('remember').checked = true;
+                    
+                    // Auto-proceed through login
                     setTimeout(() => {
-                        this.innerHTML = originalText;
-                        alert('Action simulated. In a real application, this would load the requested data.');
-                    }, 800);
-                }
+                        document.getElementById('credentialForm').dispatchEvent(new Event('submit'));
+                        setTimeout(() => {
+                            document.querySelector('.mfa-method[data-method="authenticator"]').click();
+                            setTimeout(() => {
+                                // Auto-fill OTP
+                                const inputs = document.querySelectorAll('#otpContainer .otp-digit');
+                                inputs.forEach((input, index) => {
+                                    input.value = ['1', '2', '3', '4', '5', '6'][index];
+                                    input.classList.add('filled');
+                                });
+                                setTimeout(() => {
+                                    verifyMfa();
+                                }, 500);
+                            }, 500);
+                        }, 500);
+                    }, 500);
+                }, 1000);
+            }
+            
+            // Show demo credentials after a short delay
+            setTimeout(() => {
+                const demoDiv = document.createElement('div');
+                demoDiv.className = 'fixed bottom-4 left-4 bg-gray-900 border border-gray-800 rounded-xl p-4 max-w-xs z-40 hidden md:block';
+                demoDiv.innerHTML = `
+                    <div class="flex items-start mb-2">
+                        <i class="fas fa-info-circle text-blue-400 mt-1 mr-2"></i>
+                        <div>
+                            <p class="font-medium text-sm text-white">Demo Login</p>
+                            <p class="text-xs text-gray-400 mt-1">Try these credentials:</p>
+                            <div class="mt-2 space-y-1">
+                                <p class="text-xs"><span class="text-gray-500">User:</span> <code class="text-blue-400">security.admin</code></p>
+                                <p class="text-xs"><span class="text-gray-500">Pass:</span> <code class="text-blue-400">P@ssw0rd123!</code></p>
+                                <p class="text-xs"><span class="text-gray-500">MFA Code:</span> <code class="text-blue-400">123456</code></p>
+                            </div>
+                            <button onclick="fillDemoCredentials()" class="mt-3 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition">
+                                <i class="fas fa-bolt mr-1"></i> Auto-fill
+                            </button>
+                            <button onclick="quickLogin()" class="mt-2 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg transition">
+                                <i class="fas fa-rocket mr-1"></i> Quick Login
+                            </button>
+                        </div>
+                        <button class="ml-auto text-gray-500 hover:text-white" onclick="this.parentElement.parentElement.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(demoDiv);
+                
+                // Animate in
+                setTimeout(() => {
+                    demoDiv.classList.add('opacity-0', 'translate-y-4');
+                    demoDiv.classList.remove('hidden');
+                    setTimeout(() => {
+                        demoDiv.classList.remove('opacity-0', 'translate-y-4');
+                    }, 10);
+                }, 1000);
+            }, 1500);
+        });
+
+        // Quick Login Function
+        function quickLogin() {
+            document.getElementById('username').value = 'security.admin';
+            document.getElementById('password').value = 'P@ssw0rd123!';
+            document.getElementById('remember').checked = true;
+            
+            // Auto-submit form
+            setTimeout(() => {
+                document.getElementById('credentialForm').dispatchEvent(new Event('submit'));
+            }, 300);
+        }
+
+        // Toggle Password Visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Step 1: Credentials Form
+        document.getElementById('credentialForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Basic validation
+            if (!username.trim() || !password.trim()) {
+                showAlert('Please enter both username and password.', 'error');
+                return;
+            }
+            
+            // For demo purposes, accept any non-empty credentials
+            if (password.length < 3) {
+                showAlert('Password must be at least 3 characters.', 'error');
+                return;
+            }
+            
+            // Move to Step 2
+            navigateToStep(2);
+        });
+
+        // Step 2: MFA Method Selection
+        document.querySelectorAll('.mfa-method').forEach(method => {
+            method.addEventListener('click', function() {
+                // Remove active class from all methods
+                document.querySelectorAll('.mfa-method').forEach(m => {
+                    m.classList.remove('active');
+                });
+                
+                // Add active class to selected method
+                this.classList.add('active');
+                
+                // Store selected method
+                selectedMfaMethod = this.getAttribute('data-method');
+                
+                // Move to Step 3 after short delay
+                setTimeout(() => {
+                    navigateToStep(3);
+                }, 500);
             });
         });
+
+        // Step 3: Back to Step 2
+        document.getElementById('backToStep2').addEventListener('click', function() {
+            navigateToStep(2);
+        });
+
+        // Step 2: Back to Step 1
+        document.getElementById('backToStep1').addEventListener('click', function() {
+            navigateToStep(1);
+        });
+
+        // OTP Input Handling
+        function setupOtpInputs(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const inputs = container.querySelectorAll('.otp-digit');
+            
+            inputs.forEach((input, index) => {
+                // Handle input
+                input.addEventListener('input', function(e) {
+                    const value = e.target.value;
+                    
+                    // Only allow numbers
+                    if (!/^\d?$/.test(value)) {
+                        this.value = '';
+                        return;
+                    }
+                    
+                    if (value) {
+                        this.classList.add('filled');
+                        
+                        // Auto-focus next input
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        } else {
+                            // Last digit entered, check if all filled
+                            checkOtpComplete();
+                        }
+                    } else {
+                        this.classList.remove('filled');
+                    }
+                });
+                
+                // Handle backspace
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !this.value && index > 0) {
+                        inputs[index - 1].focus();
+                        inputs[index - 1].value = '';
+                        inputs[index - 1].classList.remove('filled');
+                    }
+                });
+                
+                // Handle paste
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text');
+                    if (/^\d{6}$/.test(pastedData)) {
+                        const digits = pastedData.split('');
+                        inputs.forEach((input, i) => {
+                            if (digits[i]) {
+                                input.value = digits[i];
+                                input.classList.add('filled');
+                            }
+                        });
+                        checkOtpComplete();
+                    }
+                });
+            });
+        }
+
+        // Initialize OTP inputs
+        setupOtpInputs('otpContainer');
+        setupOtpInputs('smsOtpContainer');
+        setupOtpInputs('emailOtpContainer');
+
+        // Check if OTP is complete
+        function checkOtpComplete() {
+            if (selectedMfaMethod === 'securityKey') return;
+            
+            const containerId = `${selectedMfaMethod}-verify`;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const inputs = container.querySelectorAll('.otp-digit');
+            const otp = Array.from(inputs).map(input => input.value).join('');
+            
+            // For demo, auto-verify if code is 123456
+            if (otp === '123456') {
+                verifyMfa();
+            } else if (otp.length === 6 && otp !== '123456') {
+                showAlert('Invalid verification code. Try 123456 for demo.', 'error');
+                // Shake the inputs
+                inputs.forEach(input => input.classList.add('shake'));
+                setTimeout(() => {
+                    inputs.forEach(input => input.classList.remove('shake'));
+                }, 500);
+            }
+        }
+
+        // Verify MFA Button
+        document.getElementById('verifyMfa').addEventListener('click', verifyMfa);
+
+        // Simulate Security Key
+        document.getElementById('simulateSecurityKey').addEventListener('click', function() {
+            showAlert('Security key detected. Tap to authenticate...', 'info');
+            setTimeout(() => {
+                verifyMfa();
+            }, 1500);
+        });
+
+        // Countdown Timer
+        function startCountdown(elementId, minutes) {
+            let time = minutes * 60;
+            const element = document.getElementById(elementId);
+            const resendButton = document.querySelector(`#${elementId.replace('Countdown', '')}Resend`);
+            
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            
+            countdownInterval = setInterval(() => {
+                const minutes = Math.floor(time / 60);
+                const seconds = time % 60;
+                
+                element.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (time <= 0) {
+                    clearInterval(countdownInterval);
+                    element.textContent = '00:00';
+                    element.style.color = '#ef4444';
+                    if (resendButton) {
+                        resendButton.classList.remove('hidden');
+                    }
+                } else {
+                    time--;
+                }
+            }, 1000);
+        }
+
+        // Resend Code Buttons
+        document.getElementById('resendCode')?.addEventListener('click', function() {
+            showAlert('New code sent to your authenticator app', 'success');
+            startCountdown('countdown', 3);
+            this.classList.add('hidden');
+        });
+
+        document.getElementById('resendSms')?.addEventListener('click', function() {
+            showAlert('New SMS code sent to your mobile', 'success');
+            startCountdown('smsCountdown', 5);
+        });
+
+        document.getElementById('resendEmail')?.addEventListener('click', function() {
+            showAlert('New email code sent to your inbox', 'success');
+            startCountdown('emailCountdown', 10);
+        });
+
+        // Backup Code Button
+        document.getElementById('useBackupCode').addEventListener('click', function() {
+            document.getElementById('backupModal').classList.remove('hidden');
+        });
+
+        // Contact Support Button
+        document.getElementById('contactSupport').addEventListener('click', function() {
+            showAlert('Support ticket created. SOC team will contact you shortly.', 'info');
+        });
+
+        // Forgot Password
+        document.getElementById('forgotPassword').addEventListener('click', function(e) {
+            e.preventDefault();
+            showAlert('Password reset initiated. Check your email for instructions.', 'info');
+        });
+
+        // Navigation between steps
+        function navigateToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.mfa-step').forEach(stepElement => {
+                stepElement.classList.remove('active');
+                stepElement.classList.add('hidden');
+            });
+            
+            // Update step indicator
+            document.querySelectorAll('.flex-col.items-center').forEach((indicator, index) => {
+                const circle = indicator.querySelector('.rounded-full');
+                const text = indicator.querySelector('.text-xs');
+                
+                if (index + 1 <= step) {
+                    circle.classList.remove('bg-gray-800', 'text-gray-400');
+                    circle.classList.add('bg-blue-600', 'text-white');
+                    text.classList.remove('text-gray-400');
+                    text.classList.add('text-blue-400');
+                } else {
+                    circle.classList.remove('bg-blue-600', 'text-white');
+                    circle.classList.add('bg-gray-800', 'text-gray-400');
+                    text.classList.remove('text-blue-400');
+                    text.classList.add('text-gray-400');
+                }
+            });
+            
+            // Show selected step
+            const stepElement = document.getElementById(`step${step}`);
+            stepElement.classList.remove('hidden');
+            setTimeout(() => {
+                stepElement.classList.add('active');
+            }, 10);
+            
+            // Handle step-specific setup
+            if (step === 3 && selectedMfaMethod) {
+                // Show the correct verification method
+                document.querySelectorAll('[id$="-verify"]').forEach(el => {
+                    el.classList.add('hidden');
+                });
+                
+                const methodElement = document.getElementById(`${selectedMfaMethod}-verify`);
+                if (methodElement) {
+                    methodElement.classList.remove('hidden');
+                    
+                    // Start countdown for appropriate method
+                    if (selectedMfaMethod === 'authenticator') {
+                        startCountdown('countdown', 3);
+                    } else if (selectedMfaMethod === 'sms') {
+                        startCountdown('smsCountdown', 5);
+                    } else if (selectedMfaMethod === 'email') {
+                        startCountdown('emailCountdown', 10);
+                    }
+                    
+                    // Auto-focus first OTP input
+                    const firstInput = methodElement.querySelector('.otp-digit');
+                    if (firstInput) {
+                        setTimeout(() => firstInput.focus(), 100);
+                    }
+                }
+            }
+            
+            currentStep = step;
+        }
+
+        // Verify MFA
+        function verifyMfa() {
+            // Show login modal
+            const modal = document.getElementById('loginModal');
+            modal.classList.remove('hidden');
+            
+            // Simulate authentication process
+            simulateMfaAuthentication();
+        }
+
+        // Simulate MFA Authentication
+        function simulateMfaAuthentication() {
+            const steps = document.querySelectorAll('#modalStep1, #modalStep2, #modalStep3, #modalStep4, #modalStep5');
+            const progressBar = document.getElementById('modalProgressBar');
+            const statusText = document.getElementById('modalStatusText');
+            
+            let currentStep = 0;
+            const totalSteps = steps.length;
+            
+            // Reset all steps
+            steps.forEach(step => {
+                step.className = 'text-gray-500';
+                step.innerHTML = '<i class="fas fa-circle"></i>';
+            });
+            
+            // Start authentication simulation
+            const interval = setInterval(() => {
+                if (currentStep < totalSteps) {
+                    // Update current step
+                    steps[currentStep].className = 'text-green-400';
+                    steps[currentStep].innerHTML = '<i class="fas fa-check-circle"></i>';
+                    
+                    // Update progress bar
+                    const progress = ((currentStep + 1) / totalSteps) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    
+                    // Update status text
+                    const statusMessages = [
+                        'Validating credentials...',
+                        'Verifying MFA method...',
+                        'Checking verification code...',
+                        'Establishing secure session...',
+                        'Loading threat intelligence dashboard...'
+                    ];
+                    statusText.textContent = statusMessages[currentStep];
+                    
+                    currentStep++;
+                    
+                    // Add slight delay for each step
+                    if (currentStep === totalSteps) {
+                        setTimeout(() => {
+                            clearInterval(interval);
+                            completeMfaAuthentication();
+                        }, 800);
+                    }
+                }
+            }, 800);
+        }
+
+        // Complete MFA Authentication
+        function completeMfaAuthentication() {
+            const statusText = document.getElementById('modalStatusText');
+            statusText.textContent = 'Authentication successful! Redirecting...';
+            statusText.className = 'text-center text-sm text-green-400 mt-2';
+            
+            // Simulate redirect to dashboard
+            setTimeout(() => {
+                document.getElementById('loginModal').classList.add('hidden');
+                redirectToDashboard();
+            }, 1500);
+        }
+
+        // Redirect to Dashboard
+        function redirectToDashboard() {
+            // Show redirect overlay
+            const overlay = document.getElementById('redirectOverlay');
+            overlay.classList.remove('hidden');
+            
+            // Start countdown
+            let countdown = 3;
+            const countdownElement = document.getElementById('redirectCountdown');
+            const progressBar = document.getElementById('redirectProgress');
+            
+            // Update countdown every second
+            const countdownInterval = setInterval(() => {
+                countdownElement.textContent = `Starting in ${countdown} second${countdown !== 1 ? 's' : ''}...`;
+                
+                // Update progress bar
+                const progress = ((3 - countdown) / 3) * 100;
+                progressBar.style.width = `${progress}%`;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    // Redirect to dashboard
+                    window.location.href = 'dashboard.html';
+                }
+                
+                countdown--;
+            }, 1000);
+        }
+
+        // Backup Code Functions
+        function hideBackupModal() {
+            document.getElementById('backupModal').classList.add('hidden');
+        }
+
+        function useBackupCode() {
+            const backupCode = document.getElementById('backupCode').value;
+            
+            if (!backupCode) {
+                showAlert('Please enter a backup code', 'error');
+                return;
+            }
+            
+            // Check if backup code is valid
+            if (backupCodes.includes(backupCode.replace('-', '').toUpperCase())) {
+                showAlert('Backup code accepted. Logging you in...', 'success');
+                hideBackupModal();
+                verifyMfa();
+            } else {
+                showAlert('Invalid backup code. Please try again.', 'error');
+            }
+        }
+
+        // Fill Demo Credentials
+        window.fillDemoCredentials = function() {
+            document.getElementById('username').value = 'security.admin';
+            document.getElementById('password').value = 'P@ssw0rd123!';
+            document.getElementById('remember').checked = true;
+            
+            // Show feedback
+            const demoDiv = document.querySelector('.fixed.bottom-4.left-4');
+            if (demoDiv) {
+                demoDiv.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                        <p class="text-sm text-white">Credentials filled! Ready for MFA.</p>
+                        <button class="ml-auto text-gray-500 hover:text-white" onclick="this.parentElement.parentElement.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                setTimeout(() => {
+                    if (demoDiv.parentElement) {
+                        demoDiv.remove();
+                    }
+                }, 3000);
+            }
+        };
+
+        // Show Alert Message
+        function showAlert(message, type) {
+            // Create alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 p-4 rounded-xl border ${
+                type === 'error' 
+                    ? 'bg-red-900/20 border-red-800 text-red-400' 
+                    : type === 'success'
+                    ? 'bg-green-900/20 border-green-800 text-green-400'
+                    : 'bg-blue-900/20 border-blue-800 text-blue-400'
+            } z-50 max-w-md transform translate-x-full opacity-0 transition-all duration-300`;
+            
+            alertDiv.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle'} mr-3"></i>
+                    <div>
+                        <p class="font-medium">${type === 'error' ? 'Authentication Failed' : type === 'success' ? 'Success' : 'Information'}</p>
+                        <p class="text-sm opacity-90 mt-1">${message}</p>
+                    </div>
+                    <button class="ml-auto text-gray-400 hover:text-white" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Animate in
+            setTimeout(() => {
+                alertDiv.classList.remove('translate-x-full', 'opacity-0');
+                alertDiv.classList.add('translate-x-0', 'opacity-100');
+            }, 10);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.classList.remove('translate-x-0', 'opacity-100');
+                    alertDiv.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => {
+                        if (alertDiv.parentElement) {
+                            alertDiv.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
+        }
     </script>
 </body>
 </html>

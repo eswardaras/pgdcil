@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIEM Threat Intelligence Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .dark-bg {
+            background-color: #0f172a;
+        }
+        .nav-dark {
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+        .card-dark {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .nav-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #3b82f6;
+        }
+        .status-critical {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        .status-high {
+            background-color: rgba(249, 115, 22, 0.1);
+            color: #f97316;
+        }
+        .status-medium {
+            background-color: rgba(234, 179, 8, 0.1);
+            color: #eab308;
+        }
+        .status-low {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        .confidence-critical { color: #ef4444; }
+        .confidence-high { color: #f97316; }
+        .confidence-medium { color: #eab308; }
+        .confidence-low { color: #3b82f6; }
+        .zone-critical { border-color: #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.1)); }
+        .zone-high { border-color: #f97316; background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), rgba(249, 115, 22, 0.1)); }
+        .zone-medium { border-color: #eab308; background: linear-gradient(135deg, rgba(234, 179, 8, 0.05), rgba(234, 179, 8, 0.1)); }
+        .zone-low { border-color: #3b82f6; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.1)); }
+        .compact-chart {
+            max-height: 100px !important;
+            margin-top: 8px;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 5px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .glow-critical { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+        .glow-high { box-shadow: 0 0 12px rgba(249, 115, 22, 0.2); }
+        .glow-medium { box-shadow: 0 0 8px rgba(234, 179, 8, 0.1); }
+        .glow-low { box-shadow: 0 0 5px rgba(59, 130, 246, 0.1); }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .welcome-message {
+            animation: slideDown 0.8s ease-out;
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body class="dark-bg text-gray-200">
+    <!-- Horizontal Navigation Menu -->
+    <nav class="nav-dark sticky top-0 z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <!-- Left: Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white">SIEM Threat Intel</h1>
+                        <p class="text-xs text-gray-400">PowerTel Security</p>
+                    </div>
+                </div>
+
+                <!-- Center: Navigation Links -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="dashboard.html" class="nav-active relative px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                    </a>
+                    <a href="threat-intel.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-radar mr-2"></i>Threat Intel
+                    </a>
+                    <a href="dns-analytics.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-globe mr-2"></i>DNS Analytics
+                    </a>
+                    <a href="user-management.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-users-cog mr-2"></i>User Management
+                    </a>
+                    <a href="reports.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-chart-bar mr-2"></i>Reports
+                    </a>
+                    <a href="settings.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </a>
+                </div>
+
+                <!-- Right: User & Controls -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative hidden md:block">
+                        <input type="text" placeholder="Search IOCs..." class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    </div>
+                    
+                    <div class="relative">
+                        <button class="relative p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge">5</span>
+                        </button>
+                    </div>
+                    
+                    <div class="hidden md:block h-6 w-px bg-gray-700"></div>
+                    
+                    <div class="flex items-center space-x-2 cursor-pointer" id="userMenu">
+                        <div class="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center">
+                            <i class="fas fa-user text-blue-400"></i>
+                        </div>
+                        <div class="hidden md:block">
+                            <p class="text-sm font-medium" id="userName">Security Admin</p>
+                            <p class="text-xs text-gray-400">Threat Analyst</p>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                    </div>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <button class="md:hidden p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation (Hidden by default) -->
+        <div class="md:hidden border-t border-gray-800 px-4 py-3 hidden" id="mobile-menu">
+            <div class="space-y-1">
+                <a href="dashboard.html" class="flex items-center px-3 py-2 rounded-lg bg-blue-900/20 text-white">
+                    <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                </a>
+                <a href="threat-intel.html" class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800">
+                    <i class="fas fa-radar mr-3"></i>Threat Intel
+                    <span class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">3</span>
+                </a>
+                <a href="dns-analytics.html" class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800">
+                    <i class="fas fa-globe mr-3"></i>DNS Analytics
+                </a>
+                <a href="user-management.html" class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800">
+                    <i class="fas fa-users-cog mr-3"></i>User Management
+                </a>
+                <a href="reports.html" class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800">
+                    <i class="fas fa-chart-bar mr-3"></i>Reports
+                </a>
+                <a href="settings.html" class="flex items-center px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800">
+                    <i class="fas fa-cog mr-3"></i>Settings
+                </a>
+                <div class="pt-2 border-t border-gray-800">
+                    <a href="login.html" class="flex items-center px-3 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-gray-800">
+                        <i class="fas fa-sign-out-alt mr-3"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Welcome Banner -->
+    <div class="container mx-auto px-4 pt-6">
+        <div class="card-dark rounded-xl p-6 mb-6 welcome-message">
+            <div class="flex flex-col md:flex-row md:items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Welcome back, <span id="welcomeUser">Security Admin</span>! 👋</h1>
+                    <p class="text-gray-400 mt-2">Last login was 2 minutes ago from IP 192.168.1.45</p>
+                    <div class="flex items-center mt-3 space-x-4">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-sm text-gray-400">MFA Verified</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                            <span class="text-sm text-gray-400">Session Active</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                            <span class="text-sm text-gray-400">Role: Threat Analyst</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <div class="flex space-x-3">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm">
+                            <i class="fas fa-plus mr-2"></i> New Alert
+                        </button>
+                        <button class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center text-sm">
+                            <i class="fas fa-sync-alt mr-2"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 pb-6">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="card-dark rounded-xl p-4 hover:bg-gray-800/50 transition cursor-pointer">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">48</p>
+                        <p class="text-xs text-gray-400">Total IOC Hits</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-red-900/30 flex items-center justify-center">
+                        <i class="fas fa-radar text-red-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span class="text-green-400">↑ 12%</span> from yesterday
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4 hover:bg-gray-800/50 transition cursor-pointer">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">24</p>
+                        <p class="text-xs text-gray-400">Active Alerts</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-orange-900/30 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-orange-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span class="text-red-400">3 critical</span> • 8 high
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4 hover:bg-gray-800/50 transition cursor-pointer">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">98.7%</p>
+                        <p class="text-xs text-gray-400">DNS Block Rate</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-green-900/30 flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-green-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    142 malicious domains blocked
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4 hover:bg-gray-800/50 transition cursor-pointer">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">42.8K</p>
+                        <p class="text-xs text-gray-400">Logs Today</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center">
+                        <i class="fas fa-database text-blue-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    PowerTel DNS ingestion
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Threat Intelligence Overview -->
+            <div class="card-dark rounded-xl p-4 lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-white">Threat Intelligence Overview</h2>
+                    <div class="flex items-center">
+                        <i class="fas fa-database text-blue-400 mr-2 text-sm"></i>
+                        <span class="text-sm text-gray-300">PowerTel DNS Logs</span>
+                    </div>
+                </div>
+                
+                <!-- IOC Hits Trend Chart -->
+                <div class="compact-chart mb-4">
+                    <canvas id="iocTrendChart"></canvas>
+                </div>
+                
+                <!-- Recent IOC Hits -->
+                <div class="space-y-3">
+                    <h3 class="font-bold text-white text-sm">Recent IOC Hits</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 rounded-lg bg-red-900/30 flex items-center justify-center mr-3">
+                                    <i class="fas fa-globe text-red-400"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium">malware-c2.pwrtel.net</p>
+                                    <p class="text-xs text-gray-400">12 hits across 3 assets</p>
+                                </div>
+                            </div>
+                            <span class="status-critical px-2 py-1 rounded text-xs">Critical</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 rounded-lg bg-orange-900/30 flex items-center justify-center mr-3">
+                                    <i class="fas fa-server text-orange-400"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium">185.243.115.84</p>
+                                    <p class="text-xs text-gray-400">Known C2 server - 8 hits</p>
+                                </div>
+                            </div>
+                            <span class="status-high px-2 py-1 rounded text-xs">High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Alerts -->
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-white">Security Alerts</h2>
+                    <span class="px-2 py-1 bg-red-900/30 text-red-400 rounded text-xs">24 Active</span>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="p-3 bg-gray-800/30 rounded-lg border-l-4 border-red-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold">Brute Force Attack</p>
+                                <p class="text-sm text-gray-400 mt-1">Server-04 • 15 minutes ago</p>
+                            </div>
+                            <span class="status-critical px-2 py-1 rounded text-xs">Critical</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-gray-800/30 rounded-lg border-l-4 border-orange-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold">Multiple Auth Failures</p>
+                                <p class="text-sm text-gray-400 mt-1">Workstation-12 • 1 hour ago</p>
+                            </div>
+                            <span class="status-high px-2 py-1 rounded text-xs">High</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-gray-800/30 rounded-lg border-l-4 border-yellow-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold">Suspicious DNS Query</p>
+                                <p class="text-sm text-gray-400 mt-1">data-exfil.xyz • 2 hours ago</p>
+                            </div>
+                            <span class="status-medium px-2 py-1 rounded text-xs">Medium</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-gray-800/30 rounded-lg border-l-4 border-blue-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold">Unusual Data Transfer</p>
+                                <p class="text-sm text-gray-400 mt-1">Workstation-05 • 3 hours ago</p>
+                            </div>
+                            <span class="status-low px-2 py-1 rounded text-xs">Low</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="w-full mt-4 py-2 border border-gray-700 rounded-lg hover:bg-gray-800/50 transition text-sm">
+                    View All Alerts →
+                </button>
+            </div>
+        </div>
+
+        <!-- DNS Analytics -->
+        <div class="card-dark rounded-xl p-4 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-white">DNS Analytics</h2>
+                <span class="px-2 py-1 bg-blue-900/30 text-blue-400 rounded text-xs">Live Feed</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-gray-800/30 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xl font-bold text-white">142</p>
+                            <p class="text-sm text-gray-400">Blocked Queries</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-red-900/30 flex items-center justify-center">
+                            <i class="fas fa-ban text-red-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800/30 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xl font-bold text-green-400">98.7%</p>
+                            <p class="text-sm text-gray-400">Block Rate</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-green-900/30 flex items-center justify-center">
+                            <i class="fas fa-chart-line text-green-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800/30 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xl font-bold text-yellow-400">9</p>
+                            <p class="text-sm text-gray-400">Unknown Domains</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-yellow-900/30 flex items-center justify-center">
+                            <i class="fas fa-question-circle text-yellow-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="compact-chart">
+                <canvas id="dnsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="card-dark rounded-xl p-4">
+                <h3 class="font-bold text-white mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    <button class="w-full flex items-center p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition">
+                        <i class="fas fa-plus-circle text-blue-400 mr-3"></i>
+                        <span>Create New IOC</span>
+                    </button>
+                    <button class="w-full flex items-center p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition">
+                        <i class="fas fa-file-export text-green-400 mr-3"></i>
+                        <span>Export Report</span>
+                    </button>
+                    <button class="w-full flex items-center p-3 bg-gray-800/50 hover:bg-gray-800 rounded-lg transition">
+                        <i class="fas fa-user-shield text-purple-400 mr-3"></i>
+                        <span>Run Security Scan</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <h3 class="font-bold text-white mb-4">Recent Activity</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-blue-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm">You logged in</p>
+                                <p class="text-xs text-gray-400">2 minutes ago</p>
+                            </div>
+                        </div>
+                        <span class="text-green-400 text-xs">✓ MFA</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-green-900/30 flex items-center justify-center mr-3">
+                                <i class="fas fa-shield-alt text-green-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm">IOC database updated</p>
+                                <p class="text-xs text-gray-400">15 minutes ago</p>
+                            </div>
+                        </div>
+                        <span class="text-blue-400 text-xs">+24</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <h3 class="font-bold text-white mb-4">System Status</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">SIEM Core</span>
+                        <span class="flex items-center">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-xs text-green-400">Online</span>
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">DNS Log Ingestion</span>
+                        <span class="flex items-center">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-xs text-green-400">Active</span>
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Threat Intel Feeds</span>
+                        <span class="flex items-center">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-xs text-green-400">Synced</span>
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Alert Engine</span>
+                        <span class="flex items-center">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-xs text-green-400">Running</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-xs border-t border-gray-800 pt-4">
+            <div class="flex justify-center items-center mb-1">
+                <i class="fas fa-shield-alt text-blue-400 mr-2"></i>
+                <p>SIEM Threat Intelligence Dashboard • Powered by PGDCIl • Session Active</p>
+            </div>
+            <p>Data refreshes every 60 seconds • Last update: <span id="current-time"></span></p>
+        </footer>
+    </div>
+
+    <!-- User Dropdown Menu -->
+    <div id="dropdownMenu" class="absolute right-4 top-16 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 hidden w-48">
+        <div class="p-4 border-b border-gray-700">
+            <p class="font-medium text-white" id="dropdownUserName">Security Admin</p>
+            <p class="text-xs text-gray-400" id="dropdownUserEmail">admin@powertel.security</p>
+        </div>
+        <div class="p-2">
+            <a href="#" class="flex items-center px-3 py-2 text-sm hover:bg-gray-700 rounded">
+                <i class="fas fa-user mr-3 text-gray-400"></i>My Profile
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm hover:bg-gray-700 rounded">
+                <i class="fas fa-cog mr-3 text-gray-400"></i>Account Settings
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm hover:bg-gray-700 rounded">
+                <i class="fas fa-shield-alt mr-3 text-gray-400"></i>Security
+            </a>
+            <div class="border-t border-gray-700 my-1"></div>
+            <a href="login.html" class="flex items-center px-3 py-2 text-sm hover:bg-gray-700 rounded text-red-400">
+                <i class="fas fa-sign-out-alt mr-3"></i>Logout
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Set current time
+        const updateTime = () => {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        };
+        updateTime();
+        setInterval(updateTime, 60000); // Update every minute
+        
+        // Get username from URL or default
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('user') || 'Security Admin';
+        
+        // Update welcome message and user info
+        document.getElementById('welcomeUser').textContent = username;
+        document.getElementById('userName').textContent = username;
+        document.getElementById('dropdownUserName').textContent = username;
+        
+        // Mobile menu toggle
+        document.querySelector('button.md\\:hidden').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+        
+        // User Menu Dropdown
+        const userMenu = document.getElementById('userMenu');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        
+        userMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!userMenu.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.add('hidden');
+            }
+        });
+        
+        // Charts
+        const iocTrendCtx = document.getElementById('iocTrendChart').getContext('2d');
+        const iocTrendChart = new Chart(iocTrendCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                datasets: [
+                    {
+                        label: 'IOC Hits',
+                        data: [5, 8, 12, 18, 14, 9],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#334155',
+                            display: false
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 8
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#334155',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 8
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // DNS Chart
+        const dnsCtx = document.getElementById('dnsChart').getContext('2d');
+        const dnsChart = new Chart(dnsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Malware', 'Phishing', 'C2', 'Botnet', 'Spam'],
+                datasets: [{
+                    label: 'Blocked Queries',
+                    data: [142, 67, 89, 45, 23],
+                    backgroundColor: [
+                        '#ef4444',
+                        '#f97316',
+                        '#dc2626',
+                        '#b91c1c',
+                        '#991b1b'
+                    ],
+                    borderColor: '#1e293b',
+                    borderWidth: 0.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#334155',
+                            display: false
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 8
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#334155',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: {
+                                size: 8
+                            },
+                            callback: function(value) {
+                                if (value >= 1000) {
+                                    return (value / 1000) + 'k';
+                                }
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Auto-refresh dashboard data
+        setInterval(() => {
+            // Simulate data refresh
+            const totalIocs = document.querySelector('.card-dark:first-child .text-2xl');
+            const currentValue = parseInt(totalIocs.textContent);
+            const newValue = currentValue + Math.floor(Math.random() * 5);
+            totalIocs.textContent = newValue;
+            
+            // Update time
+            updateTime();
+        }, 60000); // Refresh every minute
+        
+        // Button actions
+        document.querySelectorAll('button').forEach(button => {
+            if (button.textContent.includes('New Alert')) {
+                button.addEventListener('click', () => {
+                    alert('Creating new security alert...');
+                });
+            } else if (button.textContent.includes('Refresh')) {
+                button.addEventListener('click', () => {
+                    location.reload();
+                });
+            } else if (button.textContent.includes('View All Alerts')) {
+                button.addEventListener('click', () => {
+                    alert('Navigating to all alerts page...');
+                });
+            }
+        });
+        
+        // Quick Actions
+        document.querySelectorAll('.card-dark button').forEach(button => {
+            if (button.textContent.includes('Create New IOC')) {
+                button.addEventListener('click', () => {
+                    alert('Opening IOC creation form...');
+                });
+            } else if (button.textContent.includes('Export Report')) {
+                button.addEventListener('click', () => {
+                    alert('Generating and downloading report...');
+                });
+            } else if (button.textContent.includes('Run Security Scan')) {
+                button.addEventListener('click', () => {
+                    alert('Initiating security scan...');
+                });
+            }
+        });
+        
+        // Search functionality
+        const searchInput = document.querySelector('input[type="text"]');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    alert(`Searching for: "${this.value}"`);
+                    this.value = '';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
