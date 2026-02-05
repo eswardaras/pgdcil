@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIEM - User Role Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .dark-bg {
+            background-color: #0f172a;
+        }
+        .nav-dark {
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+        .card-dark {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .nav-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #3b82f6;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .role-admin { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: #ef4444; }
+        .role-analyst { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: #3b82f6; }
+        .role-operator { background-color: rgba(34, 197, 94, 0.1); color: #22c55e; border-color: #22c55e; }
+        .role-viewer { background-color: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: #a855f7; }
+        .role-auditor { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; border-color: #f59e0b; }
+        .status-active { background-color: rgba(34, 197, 94, 0.1); color: #22c55e; }
+        .status-inactive { background-color: rgba(148, 163, 184, 0.1); color: #94a3b8; }
+        .status-pending { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .permission-active { background-color: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .permission-inactive { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .checkbox-custom:checked {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .checkbox-custom:checked::after {
+            content: '✓';
+            color: white;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body class="dark-bg text-gray-200">
+    <!-- Horizontal Navigation Menu (Same as Dashboard) -->
+    <nav class="nav-dark sticky top-0 z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <!-- Left: Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white">SIEM Threat Intel</h1>
+                        <p class="text-xs text-gray-400">PowerTel Security</p>
+                    </div>
+                </div>
+
+                <!-- Center: Navigation Links -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="dashboard.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                    </a>
+                    <a href="threat-intel.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-radar mr-2"></i>Threat Intel
+                    </a>
+                    <a href="dns-analytics.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-globe mr-2"></i>DNS Analytics
+                    </a>
+                    <a href="user-management.html" class="nav-active relative px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-users-cog mr-2"></i>User Management
+                    </a>
+                    <a href="reports.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-chart-bar mr-2"></i>Reports
+                    </a>
+                    <a href="settings.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </a>
+                </div>
+
+                <!-- Right: User & Controls -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative hidden md:block">
+                        <input type="text" placeholder="Search users..." class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    </div>
+                    
+                    <div class="relative">
+                        <button class="relative p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg">
+                            <i class="fas fa-bell"></i>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                        </button>
+                    </div>
+                    
+                    <div class="hidden md:block h-6 w-px bg-gray-700"></div>
+                    
+                    <div class="flex items-center space-x-2 cursor-pointer" id="userMenu">
+                        <div class="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center">
+                            <i class="fas fa-user text-blue-400"></i>
+                        </div>
+                        <div class="hidden md:block">
+                            <p class="text-sm font-medium">Security Admin</p>
+                            <p class="text-xs text-gray-400">Role: System Administrator</p>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- User Dropdown Menu (Hidden by default) -->
+    <div id="dropdownMenu" class="absolute right-4 top-16 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 hidden w-48">
+        <div class="p-4 border-b border-gray-700">
+            <p class="font-medium text-white">Security Admin</p>
+            <p class="text-xs text-gray-400">admin@powertel.security</p>
+        </div>
+        <div class="p-2">
+            <a href="#" class="flex items-center px-3 py-2 text-sm hover:bg-gray-700 rounded">
+                <i class="fas fa-user mr-3 text-gray-400"></i>My Profile
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm hover:bg-gray-700 rounded">
+                <i class="fas fa-cog mr-3 text-gray-400"></i>Account Settings
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm hover:bg-gray-700 rounded">
+                <i class="fas fa-shield-alt mr-3 text-gray-400"></i>Security
+            </a>
+            <div class="border-t border-gray-700 my-1"></div>
+            <a href="login.html" class="flex items-center px-3 py-2 text-sm hover:bg-gray-700 rounded text-red-400">
+                <i class="fas fa-sign-out-alt mr-3"></i>Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white">User Role Management</h1>
+                <p class="text-gray-400 text-sm">Manage user permissions and dashboard access for SIEM platform</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm" id="addUserBtn">
+                    <i class="fas fa-user-plus mr-2"></i> Add New User
+                </button>
+                <button class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center text-sm" id="exportBtn">
+                    <i class="fas fa-file-export mr-2"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">24</p>
+                        <p class="text-xs text-gray-400">Total Users</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center">
+                        <i class="fas fa-users text-blue-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span class="text-green-400">+2 this month</span>
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">5</p>
+                        <p class="text-xs text-gray-400">Active Roles</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center">
+                        <i class="fas fa-user-tag text-purple-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span>Admin, Analyst, Operator, Viewer, Auditor</span>
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">8</p>
+                        <p class="text-xs text-gray-400">Dashboard Modules</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-green-900/30 flex items-center justify-center">
+                        <i class="fas fa-tachometer-alt text-green-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span>Threat Intel, DNS Analytics, Network, etc.</span>
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">42</p>
+                        <p class="text-xs text-gray-400">Permissions</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-yellow-900/30 flex items-center justify-center">
+                        <i class="fas fa-key text-yellow-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span class="text-red-400">3 permissions pending</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Left Column: Users List -->
+            <div class="card-dark rounded-xl p-4 lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-white">Users List</h2>
+                    <div class="flex items-center space-x-2">
+                        <div class="relative">
+                            <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 pr-7 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option>All Roles</option>
+                                <option>Administrator</option>
+                                <option>Security Analyst</option>
+                                <option>Operator</option>
+                                <option>Viewer</option>
+                                <option>Auditor</option>
+                            </select>
+                        </div>
+                        <div class="relative">
+                            <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 pr-7 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option>All Status</option>
+                                <option>Active</option>
+                                <option>Inactive</option>
+                                <option>Pending</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Users Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left py-3 px-2 text-gray-400">User</th>
+                                <th class="text-left py-3 px-2 text-gray-400">Role</th>
+                                <th class="text-left py-3 px-2 text-gray-400">Dashboard Access</th>
+                                <th class="text-left py-3 px-2 text-gray-400">Status</th>
+                                <th class="text-left py-3 px-2 text-gray-400">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            <!-- Sample User 1 -->
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-3 px-2">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3">
+                                            <i class="fas fa-user text-blue-400"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium">John Anderson</p>
+                                            <p class="text-xs text-gray-400">john.anderson@powertel.security</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="role-admin px-2 py-1 rounded text-xs">Administrator</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Threat Intel</span>
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">DNS Analytics</span>
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Network</span>
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">All</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="status-active px-2 py-1 rounded text-xs">Active</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex space-x-2">
+                                        <button class="text-blue-400 hover:text-blue-300 p-1" onclick="editUser(1)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-400 hover:text-red-300 p-1" onclick="deleteUser(1)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Sample User 2 -->
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-3 px-2">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-green-900/30 flex items-center justify-center mr-3">
+                                            <i class="fas fa-user text-green-400"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium">Sarah Mitchell</p>
+                                            <p class="text-xs text-gray-400">sarah.mitchell@powertel.security</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="role-analyst px-2 py-1 rounded text-xs">Security Analyst</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Threat Intel</span>
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">DNS Analytics</span>
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Logs</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="status-active px-2 py-1 rounded text-xs">Active</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex space-x-2">
+                                        <button class="text-blue-400 hover:text-blue-300 p-1" onclick="editUser(2)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-400 hover:text-red-300 p-1" onclick="deleteUser(2)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Sample User 3 -->
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-3 px-2">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-purple-900/30 flex items-center justify-center mr-3">
+                                            <i class="fas fa-user text-purple-400"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium">Michael Chen</p>
+                                            <p class="text-xs text-gray-400">michael.chen@powertel.security</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="role-operator px-2 py-1 rounded text-xs">Operator</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Network</span>
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Alerts</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="status-active px-2 py-1 rounded text-xs">Active</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex space-x-2">
+                                        <button class="text-blue-400 hover:text-blue-300 p-1" onclick="editUser(3)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-400 hover:text-red-300 p-1" onclick="deleteUser(3)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Sample User 4 -->
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-3 px-2">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-yellow-900/30 flex items-center justify-center mr-3">
+                                            <i class="fas fa-user text-yellow-400"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium">Lisa Rodriguez</p>
+                                            <p class="text-xs text-gray-400">lisa.rodriguez@powertel.security</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="role-viewer px-2 py-1 rounded text-xs">Viewer</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Threat Intel</span>
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Reports</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="status-inactive px-2 py-1 rounded text-xs">Inactive</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex space-x-2">
+                                        <button class="text-blue-400 hover:text-blue-300 p-1" onclick="editUser(4)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-green-400 hover:text-green-300 p-1" onclick="activateUser(4)">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Sample User 5 -->
+                            <tr class="hover:bg-gray-800/30">
+                                <td class="py-3 px-2">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center mr-3">
+                                            <i class="fas fa-user text-red-400"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium">David Wilson</p>
+                                            <p class="text-xs text-gray-400">david.wilson@powertel.security</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="role-auditor px-2 py-1 rounded text-xs">Auditor</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Audit Logs</span>
+                                        <span class="px-2 py-0.5 bg-blue-900/20 text-blue-400 rounded text-xs">Reports</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <span class="status-pending px-2 py-1 rounded text-xs">Pending</span>
+                                </td>
+                                <td class="py-3 px-2">
+                                    <div class="flex space-x-2">
+                                        <button class="text-blue-400 hover:text-blue-300 p-1" onclick="editUser(5)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-green-400 hover:text-green-300 p-1" onclick="approveUser(5)">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
+                    <div class="text-sm text-gray-400">
+                        Showing 5 of 24 users
+                    </div>
+                    <div class="flex space-x-1">
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </button>
+                        <button class="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded">1</button>
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded">2</button>
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded">3</button>
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Role Assignment & Dashboards -->
+            <div class="space-y-6">
+                <!-- Role Assignment Card -->
+                <div class="card-dark rounded-xl p-4">
+                    <h2 class="text-lg font-bold text-white mb-4">Role Assignment</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-2">Select User</label>
+                            <select id="userSelect" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="">Select a user...</option>
+                                <option value="1">John Anderson (Administrator)</option>
+                                <option value="2" selected>Sarah Mitchell (Security Analyst)</option>
+                                <option value="3">Michael Chen (Operator)</option>
+                                <option value="4">Lisa Rodriguez (Viewer)</option>
+                                <option value="5">David Wilson (Auditor)</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-2">Assign Role</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="admin" class="mr-2">
+                                    <span class="role-admin px-2 py-1 rounded text-xs">Administrator</span>
+                                    <span class="text-xs text-gray-400 ml-2">Full system access</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="analyst" checked class="mr-2">
+                                    <span class="role-analyst px-2 py-1 rounded text-xs">Security Analyst</span>
+                                    <span class="text-xs text-gray-400 ml-2">Threat analysis & investigation</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="operator" class="mr-2">
+                                    <span class="role-operator px-2 py-1 rounded text-xs">Operator</span>
+                                    <span class="text-xs text-gray-400 ml-2">Monitor & respond to alerts</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="viewer" class="mr-2">
+                                    <span class="role-viewer px-2 py-1 rounded text-xs">Viewer</span>
+                                    <span class="text-xs text-gray-400 ml-2">Read-only access</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="auditor" class="mr-2">
+                                    <span class="role-auditor px-2 py-1 rounded text-xs">Auditor</span>
+                                    <span class="text-xs text-gray-400 ml-2">Audit logs & compliance</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm">
+                            <i class="fas fa-save mr-2"></i> Assign Role
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dashboard Access Card -->
+                <div class="card-dark rounded-xl p-4">
+                    <h2 class="text-lg font-bold text-white mb-4">Dashboard Access Control</h2>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-radar text-blue-400 mr-3"></i>
+                                <div>
+                                    <p class="font-medium">Threat Intelligence</p>
+                                    <p class="text-xs text-gray-400">IOC monitoring & analysis</p>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <input type="checkbox" class="checkbox-custom w-5 h-5 bg-gray-700 border-gray-600 rounded appearance-none cursor-pointer">
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-globe text-green-400 mr-3"></i>
+                                <div>
+                                    <p class="font-medium">DNS Analytics</p>
+                                    <p class="text-xs text-gray-400">PowerTel DNS log analysis</p>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <input type="checkbox" checked class="checkbox-custom w-5 h-5 bg-gray-700 border-gray-600 rounded appearance-none cursor-pointer">
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-network-wired text-purple-400 mr-3"></i>
+                                <div>
+                                    <p class="font-medium">Network Monitoring</p>
+                                    <p class="text-xs text-gray-400">Network traffic & anomalies</p>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <input type="checkbox" class="checkbox-custom w-5 h-5 bg-gray-700 border-gray-600 rounded appearance-none cursor-pointer">
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                                <div>
+                                    <p class="font-medium">Security Alerts</p>
+                                    <p class="text-xs text-gray-400">SIEM alerts & incidents</p>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <input type="checkbox" checked class="checkbox-custom w-5 h-5 bg-gray-700 border-gray-600 rounded appearance-none cursor-pointer">
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-chart-bar text-yellow-400 mr-3"></i>
+                                <div>
+                                    <p class="font-medium">Reports & Analytics</p>
+                                    <p class="text-xs text-gray-400">Security reports & metrics</p>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <input type="checkbox" class="checkbox-custom w-5 h-5 bg-gray-700 border-gray-600 rounded appearance-none cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm">
+                        <i class="fas fa-check-circle mr-2"></i> Save Dashboard Access
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Permissions Table -->
+        <div class="card-dark rounded-xl p-4 mb-6">
+            <h2 class="text-lg font-bold text-white mb-4">Role Permissions Matrix</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left py-3 px-2 text-gray-400">Permission</th>
+                            <th class="text-center py-3 px-2 text-gray-400">Administrator</th>
+                            <th class="text-center py-3 px-2 text-gray-400">Security Analyst</th>
+                            <th class="text-center py-3 px-2 text-gray-400">Operator</th>
+                            <th class="text-center py-3 px-2 text-gray-400">Viewer</th>
+                            <th class="text-center py-3 px-2 text-gray-400">Auditor</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                        <tr>
+                            <td class="py-3 px-2">View Threat Intelligence</td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-2">Edit IOC Database</td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-2">Manage Users</td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-2">View Audit Logs</td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-2">Export Reports</td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-inactive px-2 py-1 rounded text-xs">No</span></td>
+                            <td class="py-3 px-2 text-center"><span class="permission-active px-2 py-1 rounded text-xs">Yes</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-xs border-t border-gray-800 pt-4">
+            <div class="flex justify-center items-center mb-1">
+                <i class="fas fa-shield-alt text-blue-400 mr-2"></i>
+                <p>SIEM User Management • Role-Based Access Control • Last Updated: <span id="current-time"></span></p>
+            </div>
+            <p>24 users • 5 roles • 8 dashboard modules managed</p>
+        </footer>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-900 rounded-xl p-6 max-w-md w-full border border-gray-800">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white">Add New User</h3>
+                <button class="text-gray-400 hover:text-white" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">Full Name</label>
+                    <input type="text" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Enter full name">
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">Email Address</label>
+                    <input type="email" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="user@powertel.security">
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">Department</label>
+                    <select class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option>Security Operations</option>
+                        <option>Network Security</option>
+                        <option>Threat Intelligence</option>
+                        <option>Compliance</option>
+                        <option>IT Operations</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-300 mb-2">Initial Role</label>
+                    <select class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option>Security Analyst</option>
+                        <option>Operator</option>
+                        <option>Viewer</option>
+                        <option>Auditor</option>
+                        <option>Administrator</option>
+                    </select>
+                </div>
+                
+                <div class="pt-4 border-t border-gray-800">
+                    <div class="flex justify-end space-x-3">
+                        <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm" onclick="closeModal()">
+                            Cancel
+                        </button>
+                        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm" onclick="saveNewUser()">
+                            <i class="fas fa-user-plus mr-2"></i> Add User
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set current time
+        const now = new Date();
+        document.getElementById('current-time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // User Menu Dropdown
+        const userMenu = document.getElementById('userMenu');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        
+        userMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!userMenu.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.add('hidden');
+            }
+        });
+        
+        // Add User Modal
+        document.getElementById('addUserBtn').addEventListener('click', () => {
+            document.getElementById('addUserModal').classList.remove('hidden');
+        });
+        
+        function closeModal() {
+            document.getElementById('addUserModal').classList.add('hidden');
+        }
+        
+        function saveNewUser() {
+            alert('User added successfully! The new user will receive an email with setup instructions.');
+            closeModal();
+        }
+        
+        // Export Functionality
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            alert('Exporting user data to CSV...');
+        });
+        
+        // User Actions
+        function editUser(userId) {
+            const users = {
+                1: 'John Anderson',
+                2: 'Sarah Mitchell',
+                3: 'Michael Chen',
+                4: 'Lisa Rodriguez',
+                5: 'David Wilson'
+            };
+            alert(`Editing user: ${users[userId]}\n\nThis would open the user edit form.`);
+        }
+        
+        function deleteUser(userId) {
+            const users = {
+                1: 'John Anderson',
+                2: 'Sarah Mitchell',
+                3: 'Michael Chen',
+                4: 'Lisa Rodriguez',
+                5: 'David Wilson'
+            };
+            
+            if (confirm(`Are you sure you want to delete ${users[userId]}? This action cannot be undone.`)) {
+                alert(`User ${users[userId]} has been deleted.`);
+            }
+        }
+        
+        function activateUser(userId) {
+            const users = {
+                4: 'Lisa Rodriguez'
+            };
+            alert(`User ${users[userId]} has been activated.`);
+        }
+        
+        function approveUser(userId) {
+            const users = {
+                5: 'David Wilson'
+            };
+            alert(`User ${users[userId]} has been approved.`);
+        }
+        
+        // Role assignment form
+        document.querySelector('button[class*="bg-blue-600"]').addEventListener('click', () => {
+            const selectedUser = document.getElementById('userSelect').value;
+            const selectedRole = document.querySelector('input[name="role"]:checked').value;
+            
+            if (!selectedUser) {
+                alert('Please select a user first.');
+                return;
+            }
+            
+            const roles = {
+                admin: 'Administrator',
+                analyst: 'Security Analyst',
+                operator: 'Operator',
+                viewer: 'Viewer',
+                auditor: 'Auditor'
+            };
+            
+            alert(`Role ${roles[selectedRole]} assigned successfully!`);
+        });
+        
+        // Dashboard access save
+        document.querySelector('button[class*="bg-green-600"]').addEventListener('click', () => {
+            alert('Dashboard access permissions saved successfully!');
+        });
+        
+        // Checkbox functionality
+        document.querySelectorAll('.checkbox-custom').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    this.classList.add('checked');
+                } else {
+                    this.classList.remove('checked');
+                }
+            });
+        });
+        
+        // Search functionality
+        const searchInput = document.querySelector('input[type="text"]');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    alert(`Searching for users with: "${this.value}"`);
+                    this.value = '';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
