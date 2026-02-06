@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PGCIL - Log Trails & Audit Logs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .dark-bg {
+            background-color: #0f172a;
+        }
+        .nav-dark {
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+        .card-dark {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .nav-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #3b82f6;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .log-success { color: #22c55e; }
+        .log-error { color: #ef4444; }
+        .log-warning { color: #f59e0b; }
+        .log-info { color: #3b82f6; }
+        .log-critical { color: #dc2626; }
+        .severity-critical { background-color: rgba(220, 38, 38, 0.1); border-left: 4px solid #dc2626; }
+        .severity-high { background-color: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; }
+        .severity-medium { background-color: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; }
+        .severity-low { background-color: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; }
+        .log-type-auth { background-color: rgba(34, 197, 94, 0.1); color: #22c55e; }
+        .log-type-dns { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .log-type-system { background-color: rgba(168, 85, 247, 0.1); color: #a855f7; }
+        .log-type-security { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .log-type-audit { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .log-source-internal { background-color: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+        .log-source-external { background-color: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .log-source-firewall { background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+        .tab-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .live-indicator {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .log-line:hover {
+            background-color: rgba(51, 65, 85, 0.3);
+        }
+        .json-viewer {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 6px;
+            padding: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .json-key { color: #60a5fa; }
+        .json-string { color: #34d399; }
+        .json-number { color: #fbbf24; }
+        .json-boolean { color: #f87171; }
+        .json-null { color: #9ca3af; }
+        .filter-active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #334155;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -6px;
+            top: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #334155;
+            background: #1e293b;
+        }
+        .timeline-dot.critical { border-color: #dc2626; background: #dc2626; }
+        .timeline-dot.high { border-color: #ef4444; background: #ef4444; }
+        .timeline-dot.medium { border-color: #f59e0b; background: #f59e0b; }
+        .timeline-dot.low { border-color: #3b82f6; background: #3b82f6; }
+    </style>
+</head>
+<body class="dark-bg text-gray-200">
+    <!-- Horizontal Navigation Menu -->
+    <nav class="nav-dark sticky top-0 z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <!-- Left: Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white">PGCIL Threat Intel</h1>
+                        <p class="text-xs text-gray-400">PowerTel Security</p>
+                    </div>
+                </div>
+
+                <!-- Center: Navigation Links -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="dashboard.html" class="relative px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                    </a>
+                    <a href="dashboardOne.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-radar mr-2"></i>Asset Dashboard
+                    </a>
+                  
+                    <a href="user-management.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-users-cog mr-2"></i>User Management
+                    </a>
+                    <a href="reports.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-chart-bar mr-2"></i>Reports
+                    </a>
+                     <a href="logtrail.html" class="nav-active relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-calendar-plus mr-2"></i>Audit Trail
+                    </a>
+                    <a href="settings.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </a>
+                          <div class="pt-2 border-t border-gray-800">
+                    <a href="index.html" class="flex items-center px-3 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-gray-800">
+                        <i class="fas fa-sign-out-alt mr-3"></i>Logout
+                    </a>
+                </div>
+                </div>
+    <!-- Welcome Banner -->
+    <div class="container mx-auto px-4 pt-6">
+        <div class="card-dark rounded-xl p-6 mb-6 welcome-message">
+            <div class="flex flex-col md:flex-row md:items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Welcome back, <span id="welcomeUser">Security Admin</span>! 👋</h1>
+                    <p class="text-gray-400 mt-2">Last login was 2 minutes ago from IP 192.168.1.45</p>
+                    <div class="flex items-center mt-3 space-x-4">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-sm text-gray-400">MFA Verified</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                            <span class="text-sm text-gray-400">Session Active</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                            <span class="text-sm text-gray-400">Role: Threat Analyst</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <div class="flex space-x-3">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm">
+                            <i class="fas fa-plus mr-2"></i> New Alert
+                        </button>
+                        <button class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center text-sm">
+                            <i class="fas fa-sync-alt mr-2"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+                <!-- Right: User & Controls -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative hidden md:block">
+                        <input type="text" placeholder="Search logs..." class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    </div>
+                    
+                    <div class="relative">
+                        <button class="relative p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg">
+                            <i class="fas fa-bell"></i>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">12</span>
+                        </button>
+                    </div>
+                    
+                    <div class="hidden md:block h-6 w-px bg-gray-700"></div>
+                    
+                    <div class="flex items-center space-x-2 cursor-pointer" id="userMenu">
+                        <div class="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center">
+                            <i class="fas fa-user text-blue-400"></i>
+                        </div>
+                        <div class="hidden md:block">
+                            <p class="text-sm font-medium">Audit Analyst</p>
+                            <p class="text-xs text-gray-400">Log Reviewer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white">Log Trails & Audit Logs</h1>
+                <p class="text-gray-400 text-sm">Monitor, search, and analyze security logs and audit trails</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="flex items-center bg-red-900/30 text-red-400 px-3 py-1.5 rounded-lg text-sm">
+                    <div class="w-2 h-2 bg-red-500 rounded-full mr-2 live-indicator"></div>
+                    <span>Live Log Streaming</span>
+                </div>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm" id="exportLogs">
+                    <i class="fas fa-file-export mr-2"></i> Export Logs
+                </button>
+                <button class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center text-sm" id="clearFilters">
+                    <i class="fas fa-filter mr-2"></i> Clear Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Log Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-white">24.8K</p>
+                        <p class="text-xs text-gray-400">Total Logs Today</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center">
+                        <i class="fas fa-database text-blue-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span class="text-green-400">↑ 8.2%</span> from yesterday
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-red-400">142</p>
+                        <p class="text-xs text-gray-400">Critical Events</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-red-900/30 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    <span class="text-red-400">↑ 23</span> from last hour
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-orange-400">856</p>
+                        <p class="text-xs text-gray-400">Failed Logins</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-orange-900/30 flex items-center justify-center">
+                        <i class="fas fa-key text-orange-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    From 12 unique IPs
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-green-400">98.7%</p>
+                        <p class="text-xs text-gray-400">Log Integrity</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-green-900/30 flex items-center justify-center">
+                        <i class="fas fa-shield-check text-green-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    All logs encrypted
+                </div>
+            </div>
+            
+            <div class="card-dark rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-2xl font-bold text-purple-400">12</p>
+                        <p class="text-xs text-gray-400">Active Sources</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center">
+                        <i class="fas fa-server text-purple-400"></i>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400">
+                    3 external, 9 internal
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Left Column: Log Filters & Controls -->
+            <div class="space-y-6">
+                <!-- Log Type Filters -->
+                <div class="card-dark rounded-xl p-5">
+                    <h2 class="text-lg font-bold text-white mb-4">Log Type Filters</h2>
+                    
+                    <div class="space-y-3">
+                        <button class="filter-active w-full flex items-center justify-between p-3 bg-blue-900/20 border border-blue-700 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-shield-alt text-blue-400 mr-3"></i>
+                                <div class="text-left">
+                                    <p class="font-medium">Security Logs</p>
+                                    <p class="text-xs text-gray-400">8,452 logs</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-check text-blue-400"></i>
+                        </button>
+                        
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-user-lock text-green-400 mr-3"></i>
+                                <div class="text-left">
+                                    <p class="font-medium">Authentication</p>
+                                    <p class="text-xs text-gray-400">6,124 logs</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-400">856 failed</span>
+                        </button>
+                        
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-globe text-blue-400 mr-3"></i>
+                                <div class="text-left">
+                                    <p class="font-medium">DNS Queries</p>
+                                    <p class="text-xs text-gray-400">42.8K logs</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-400">142 blocked</span>
+                        </button>
+                        
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-cog text-purple-400 mr-3"></i>
+                                <div class="text-left">
+                                    <p class="font-medium">System Logs</p>
+                                    <p class="text-xs text-gray-400">3,245 logs</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-400">12 errors</span>
+                        </button>
+                        
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-clipboard-check text-yellow-400 mr-3"></i>
+                                <div class="text-left">
+                                    <p class="font-medium">Audit Trails</p>
+                                    <p class="text-xs text-gray-400">1,234 logs</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-400">All critical</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Severity Filters -->
+                <div class="card-dark rounded-xl p-5">
+                    <h2 class="text-lg font-bold text-white mb-4">Severity Level</h2>
+                    
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between p-2 hover:bg-gray-800/50 rounded-lg cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-red-500 mr-3"></div>
+                                <span>Critical</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-400 mr-3">142 logs</span>
+                                <input type="checkbox" checked class="w-4 h-4 text-red-600 bg-gray-800 border-gray-700 rounded focus:ring-red-500">
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center justify-between p-2 hover:bg-gray-800/50 rounded-lg cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-orange-500 mr-3"></div>
+                                <span>High</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-400 mr-3">856 logs</span>
+                                <input type="checkbox" checked class="w-4 h-4 text-orange-600 bg-gray-800 border-gray-700 rounded focus:ring-orange-500">
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center justify-between p-2 hover:bg-gray-800/50 rounded-lg cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 mr-3"></div>
+                                <span>Medium</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-400 mr-3">2.4K logs</span>
+                                <input type="checkbox" class="w-4 h-4 text-yellow-600 bg-gray-800 border-gray-700 rounded focus:ring-yellow-500">
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center justify-between p-2 hover:bg-gray-800/50 rounded-lg cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-blue-500 mr-3"></div>
+                                <span>Low</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-400 mr-3">15.2K logs</span>
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-800 border-gray-700 rounded focus:ring-blue-500">
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center justify-between p-2 hover:bg-gray-800/50 rounded-lg cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-gray-500 mr-3"></div>
+                                <span>Informational</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-400 mr-3">5.8K logs</span>
+                                <input type="checkbox" class="w-4 h-4 text-gray-600 bg-gray-800 border-gray-700 rounded focus:ring-gray-500">
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Quick Search -->
+                <div class="card-dark rounded-xl p-5">
+                    <h2 class="text-lg font-bold text-white mb-4">Quick Search</h2>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-2">Time Range</label>
+                            <select class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option>Last 15 minutes</option>
+                                <option selected>Last 1 hour</option>
+                                <option>Last 24 hours</option>
+                                <option>Last 7 days</option>
+                                <option>Custom range</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-2">Source IP</label>
+                            <input type="text" placeholder="e.g., 192.168.1.45" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-2">Username</label>
+                            <input type="text" placeholder="e.g., security.admin" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm text-gray-300 mb-2">Event ID</label>
+                            <input type="text" placeholder="e.g., 4625" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        
+                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm">
+                            <i class="fas fa-search mr-2"></i> Search Logs
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Column: Log Stream -->
+            <div class="lg:col-span-2">
+                <!-- Log Stream Header -->
+                <div class="card-dark rounded-xl p-5 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-white">Live Log Stream</h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-gray-400">Auto-refresh:</span>
+                            <div class="flex items-center">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 live-indicator"></div>
+                                <span class="text-xs text-green-400">Every 10s</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Log Tabs -->
+                    <div class="flex space-x-1 mb-4 overflow-x-auto">
+                        <button class="tab-active px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap" data-logtab="all">
+                            All Logs
+                        </button>
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-logtab="critical">
+                            Critical Only
+                        </button>
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-logtab="failed">
+                            Failed Logins
+                        </button>
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-logtab="dns">
+                            DNS Queries
+                        </button>
+                        <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-logtab="audit">
+                            Audit Trails
+                        </button>
+                    </div>
+                    
+                    <!-- Log Stream -->
+                    <div class="space-y-3 max-h-[500px] overflow-y-auto scrollbar-custom">
+                        <!-- Log Entry 1: Critical Security Alert -->
+                        <div class="log-line severity-critical p-4 rounded-lg cursor-pointer hover:bg-gray-800/30 transition" onclick="showLogDetails(1)">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                                    <div>
+                                        <p class="font-bold text-white">Brute Force Attack Detected</p>
+                                        <p class="text-xs text-gray-400">Multiple failed login attempts</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-400">Just now</p>
+                                    <span class="log-type-security px-2 py-1 rounded text-xs">Security</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                    <span class="text-gray-400">Source IP:</span>
+                                    <span class="ml-2 font-mono text-white">185.243.115.84</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Target:</span>
+                                    <span class="ml-2 text-white">Server-04</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Attempts:</span>
+                                    <span class="ml-2 text-red-400 font-bold">24</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Event ID:</span>
+                                    <span class="ml-2 font-mono text-white">4625</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Log Entry 2: DNS Block -->
+                        <div class="log-line severity-high p-4 rounded-lg cursor-pointer hover:bg-gray-800/30 transition" onclick="showLogDetails(2)">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center">
+                                    <i class="fas fa-globe text-blue-400 mr-3"></i>
+                                    <div>
+                                        <p class="font-bold text-white">Malicious DNS Query Blocked</p>
+                                        <p class="text-xs text-gray-400">PowerTel DNS blocked resolution</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-400">2 minutes ago</p>
+                                    <span class="log-type-dns px-2 py-1 rounded text-xs">DNS</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                    <span class="text-gray-400">Domain:</span>
+                                    <span class="ml-2 font-mono text-white">malware-c2.pwrtel.net</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Client IP:</span>
+                                    <span class="ml-2 font-mono text-white">10.2.45.67</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Action:</span>
+                                    <span class="ml-2 text-red-400 font-bold">BLOCKED</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Reason:</span>
+                                    <span class="ml-2 text-white">Known C2 Server</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Log Entry 3: Failed Authentication -->
+                        <div class="log-line severity-medium p-4 rounded-lg cursor-pointer hover:bg-gray-800/30 transition" onclick="showLogDetails(3)">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center">
+                                    <i class="fas fa-user-lock text-orange-400 mr-3"></i>
+                                    <div>
+                                        <p class="font-bold text-white">Failed Authentication Attempt</p>
+                                        <p class="text-xs text-gray-400">Invalid credentials</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-400">5 minutes ago</p>
+                                    <span class="log-type-auth px-2 py-1 rounded text-xs">Authentication</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                    <span class="text-gray-400">Username:</span>
+                                    <span class="ml-2 font-mono text-white">unknown.user</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Source IP:</span>
+                                    <span class="ml-2 font-mono text-white">192.168.1.123</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Service:</span>
+                                    <span class="ml-2 text-white">SSH</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Status:</span>
+                                    <span class="ml-2 text-red-400 font-bold">Failed</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Log Entry 4: System Audit -->
+                        <div class="log-line severity-low p-4 rounded-lg cursor-pointer hover:bg-gray-800/30 transition" onclick="showLogDetails(4)">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center">
+                                    <i class="fas fa-clipboard-check text-yellow-400 mr-3"></i>
+                                    <div>
+                                        <p class="font-bold text-white">Configuration Change</p>
+                                        <p class="text-xs text-gray-400">Firewall rule updated</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-400">15 minutes ago</p>
+                                    <span class="log-type-audit px-2 py-1 rounded text-xs">Audit</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                    <span class="text-gray-400">User:</span>
+                                    <span class="ml-2 text-white">admin.johnson</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Action:</span>
+                                    <span class="ml-2 text-green-400">Modified</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Object:</span>
+                                    <span class="ml-2 text-white">Firewall Rule #42</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Change ID:</span>
+                                    <span class="ml-2 font-mono text-white">AUD-2024-0421</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Log Entry 5: System Error -->
+                        <div class="log-line severity-medium p-4 rounded-lg cursor-pointer hover:bg-gray-800/30 transition" onclick="showLogDetails(5)">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center">
+                                    <i class="fas fa-server text-purple-400 mr-3"></i>
+                                    <div>
+                                        <p class="font-bold text-white">System Service Restarted</p>
+                                        <p class="text-xs text-gray-400">PGCIL log collector service</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-400">30 minutes ago</p>
+                                    <span class="log-type-system px-2 py-1 rounded text-xs">System</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div>
+                                    <span class="text-gray-400">Service:</span>
+                                    <span class="ml-2 text-white">PGCIL-log-collector</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Status:</span>
+                                    <span class="ml-2 text-green-400">Running</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Duration:</span>
+                                    <span class="ml-2 text-white">2.3s downtime</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-400">Event ID:</span>
+                                    <span class="ml-2 font-mono text-white">7036</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Load More -->
+                    <div class="mt-4 text-center">
+                        <button class="text-blue-400 hover:text-blue-300 text-sm">
+                            <i class="fas fa-sync-alt mr-2"></i> Load More Logs
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Log Sources & Timeline -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Active Log Sources -->
+                    <div class="card-dark rounded-xl p-5">
+                        <h2 class="text-lg font-bold text-white mb-4">Active Log Sources</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-server text-blue-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">PowerTel DNS Servers</p>
+                                        <p class="text-xs text-gray-400">3 servers active</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-bold text-green-400">42.8K</p>
+                                    <p class="text-xs text-gray-400">logs/hour</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-green-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-network-wired text-green-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">Network Firewalls</p>
+                                        <p class="text-xs text-gray-400">2 devices</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-bold text-blue-400">8.4K</p>
+                                    <p class="text-xs text-gray-400">logs/hour</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center mr-3">
+                                        <i class="fas fa-user-shield text-purple-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">Authentication Servers</p>
+                                        <p class="text-xs text-gray-400">Active Directory</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-bold text-yellow-400">1.2K</p>
+                                    <p class="text-xs text-gray-400">logs/hour</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Timeline -->
+                    <div class="card-dark rounded-xl p-5">
+                        <h2 class="text-lg font-bold text-white mb-4">Recent Timeline</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="timeline-item">
+                                <div class="timeline-dot critical"></div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-white">Critical Alert</p>
+                                    <p class="text-xs text-gray-400">Brute force attack detected</p>
+                                    <p class="text-xs text-gray-500">Just now</p>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-item">
+                                <div class="timeline-dot high"></div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-white">DNS Block</p>
+                                    <p class="text-xs text-gray-400">Malicious domain blocked</p>
+                                    <p class="text-xs text-gray-500">2 minutes ago</p>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-item">
+                                <div class="timeline-dot medium"></div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-white">Failed Login</p>
+                                    <p class="text-xs text-gray-400">Invalid credentials attempt</p>
+                                    <p class="text-xs text-gray-500">5 minutes ago</p>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline-item">
+                                <div class="timeline-dot low"></div>
+                                <div class="ml-4">
+                                    <p class="font-bold text-white">Audit Event</p>
+                                    <p class="text-xs text-gray-400">Configuration change logged</p>
+                                    <p class="text-xs text-gray-500">15 minutes ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Details Modal -->
+        <div id="logDetailsModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+            <div class="bg-gray-900 rounded-2xl p-8 max-w-4xl w-full border border-gray-800 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white" id="modalLogTitle">Log Details</h3>
+                    <button class="text-gray-400 hover:text-white" onclick="closeLogDetails()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div id="modalLogContent" class="space-y-6">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                
+                <div class="mt-6 pt-6 border-t border-gray-800 flex justify-end space-x-3">
+                    <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm" onclick="closeLogDetails()">
+                        Close
+                    </button>
+                    <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm flex items-center">
+                        <i class="fas fa-flag mr-2"></i> Flag for Review
+                    </button>
+                    <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm flex items-center">
+                        <i class="fas fa-download mr-2"></i> Export Log
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-xs border-t border-gray-800 pt-4">
+            <div class="flex justify-center items-center mb-1">
+                <i class="fas fa-clipboard-list text-blue-400 mr-2"></i>
+                <p>PGCIL Log Trails • 24,812 logs processed today • Last updated: <span id="current-time"></span></p>
+            </div>
+            <p>Log retention: 90 days • Encryption: AES-256 • Integrity: SHA-256 hashed</p>
+        </footer>
+    </div>
+
+    <script>
+        // Set current time
+        const updateTime = () => {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        };
+        updateTime();
+        setInterval(updateTime, 30000); // Update every 30 seconds
+        
+        // Log Tab Switching
+        const logTabs = document.querySelectorAll('[data-logtab]');
+        
+        logTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                logTabs.forEach(t => t.classList.remove('tab-active', 'bg-blue-600', 'text-white'));
+                logTabs.forEach(t => t.classList.add('bg-gray-800', 'text-gray-300'));
+                
+                // Add active class to clicked tab
+                tab.classList.remove('bg-gray-800', 'text-gray-300');
+                tab.classList.add('tab-active', 'bg-blue-600', 'text-white');
+                
+                // Filter log entries based on selected tab
+                filterLogs(tab.getAttribute('data-logtab'));
+            });
+        });
+        
+        // Filter logs function
+        function filterLogs(filter) {
+            const logEntries = document.querySelectorAll('.log-line');
+            
+            logEntries.forEach(entry => {
+                if (filter === 'all') {
+                    entry.style.display = 'block';
+                } else if (filter === 'critical') {
+                    if (entry.classList.contains('severity-critical')) {
+                        entry.style.display = 'block';
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                } else if (filter === 'failed') {
+                    const text = entry.textContent.toLowerCase();
+                    if (text.includes('failed') || text.includes('invalid') || text.includes('brute')) {
+                        entry.style.display = 'block';
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                } else if (filter === 'dns') {
+                    if (entry.querySelector('.log-type-dns')) {
+                        entry.style.display = 'block';
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                } else if (filter === 'audit') {
+                    if (entry.querySelector('.log-type-audit')) {
+                        entry.style.display = 'block';
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Show log details
+        function showLogDetails(logId) {
+            const modal = document.getElementById('logDetailsModal');
+            const title = document.getElementById('modalLogTitle');
+            const content = document.getElementById('modalLogContent');
+            
+            // Sample log data
+            const logData = {
+                1: {
+                    title: "Brute Force Attack Detected",
+                    severity: "Critical",
+                    type: "Security",
+                    timestamp: new Date().toISOString(),
+                    source: "185.243.115.84",
+                    target: "Server-04",
+                    details: {
+                        eventId: "4625",
+                        logonType: "3",
+                        authenticationPackage: "NTLM",
+                        failureReason: "Unknown user name or bad password",
+                        subStatus: "0xC0000064",
+                        processId: "0x0",
+                        callStack: "N/A"
+                    },
+                    raw: `{
+  "timestamp": "${new Date().toISOString()}",
+  "event_id": "4625",
+  "severity": "CRITICAL",
+  "source": "Security",
+  "message": "An account failed to log on.",
+  "details": {
+    "subject": {
+      "security_id": "S-1-0-0",
+      "account_name": "-",
+      "account_domain": "-",
+      "logon_id": "0x0"
+    },
+    "logon_type": "3",
+    "account_for_failed_logon": {
+      "security_id": "S-1-0-0",
+      "account_name": "UNKNOWN_USER",
+      "account_domain": "WORKSTATION"
+    },
+    "failure_information": {
+      "failure_reason": "Unknown user name or bad password.",
+      "status": "0xc000006d",
+      "sub_status": "0xc0000064"
+    },
+    "process_information": {
+      "process_id": "0x0",
+      "process_name": "-"
+    },
+    "network_information": {
+      "workstation_name": "WORKSTATION",
+      "source_network_address": "185.243.115.84",
+      "source_port": "52345"
+    }
+  }
+}`
+                },
+                2: {
+                    title: "Malicious DNS Query Blocked",
+                    severity: "High",
+                    type: "DNS",
+                    timestamp: new Date(Date.now() - 120000).toISOString(),
+                    source: "10.2.45.67",
+                    target: "malware-c2.pwrtel.net",
+                    details: {
+                        queryType: "A",
+                        responseCode: "NXDOMAIN",
+                        dnsServer: "10.10.1.10",
+                        threatCategory: "C2 Server",
+                        confidence: "98%",
+                        actionTaken: "Blocked",
+                        iocMatch: "PT-DNS-IOC-0421"
+                    },
+                    raw: `{
+  "timestamp": "${new Date(Date.now() - 120000).toISOString()}",
+  "event_type": "DNS_QUERY_BLOCKED",
+  "severity": "HIGH",
+  "source": "PowerTel DNS",
+  "message": "Malicious domain resolution blocked",
+  "details": {
+    "client": {
+      "ip": "10.2.45.67",
+      "mac": "00:1A:2B:3C:4D:5E",
+      "hostname": "WORKSTATION-12"
+    },
+    "query": {
+      "domain": "malware-c2.pwrtel.net",
+      "type": "A",
+      "class": "IN",
+      "timestamp": "${new Date(Date.now() - 120000).toISOString()}"
+    },
+    "response": {
+      "code": "NXDOMAIN",
+      "blocked": true,
+      "reason": "Known C2 Server",
+      "threat_intel_source": "PowerTel Threat Feed v3.2"
+    },
+    "threat_intel": {
+      "ioc_id": "PT-DNS-IOC-0421",
+      "confidence": 0.98,
+      "first_seen": "2024-04-01T08:00:00Z",
+      "last_updated": "2024-04-15T12:00:00Z",
+      "category": "Command & Control"
+    }
+  }
+}`
+                }
+            };
+            
+            const log = logData[logId] || logData[1];
+            title.textContent = log.title;
+            
+            // Format JSON for display
+            function syntaxHighlight(json) {
+                json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, 
+                    function(match) {
+                        let cls = 'json-number';
+                        if (/^"/.test(match)) {
+                            if (/:$/.test(match)) {
+                                cls = 'json-key';
+                            } else {
+                                cls = 'json-string';
+                            }
+                        } else if (/true|false/.test(match)) {
+                            cls = 'json-boolean';
+                        } else if (/null/.test(match)) {
+                            cls = 'json-null';
+                        }
+                        return '<span class="' + cls + '">' + match + '</span>';
+                    });
+            }
+            
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gray-800/30 rounded-lg p-4">
+                            <p class="text-gray-400 text-sm mb-1">Event Title</p>
+                            <p class="font-bold text-white">${log.title}</p>
+                        </div>
+                        <div class="bg-gray-800/30 rounded-lg p-4">
+                            <p class="text-gray-400 text-sm mb-1">Severity</p>
+                            <p class="font-bold ${log.severity === 'Critical' ? 'text-red-400' : 'text-orange-400'}">${log.severity}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-800/30 rounded-lg p-4">
+                            <p class="text-gray-400 text-sm mb-1">Timestamp</p>
+                            <p class="font-mono text-white">${new Date(log.timestamp).toLocaleString()}</p>
+                        </div>
+                        <div class="bg-gray-800/30 rounded-lg p-4">
+                            <p class="text-gray-400 text-sm mb-1">Source IP</p>
+                            <p class="font-mono text-white">${log.source}</p>
+                        </div>
+                        <div class="bg-gray-800/30 rounded-lg p-4">
+                            <p class="text-gray-400 text-sm mb-1">Log Type</p>
+                            <span class="px-2 py-1 ${log.type === 'Security' ? 'log-type-security' : 'log-type-dns'} rounded text-xs">${log.type}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-800/30 rounded-lg p-4">
+                        <p class="text-gray-400 text-sm mb-2">Event Details</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            ${Object.entries(log.details).map(([key, value]) => `
+                                <div>
+                                    <span class="text-gray-400 text-sm">${key.replace(/([A-Z])/g, ' $1').toUpperCase()}:</span>
+                                    <span class="ml-2 font-mono text-white">${value}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p class="text-gray-400 text-sm mb-2">Raw Log Data</p>
+                        <div class="json-viewer">
+                            ${syntaxHighlight(log.raw)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+        
+        // Close log details
+        function closeLogDetails() {
+            document.getElementById('logDetailsModal').classList.add('hidden');
+        }
+        
+        // Export Logs Button
+        document.getElementById('exportLogs').addEventListener('click', () => {
+            alert('Exporting logs... This would generate a CSV/JSON file with all filtered logs.');
+        });
+        
+        // Clear Filters Button
+        document.getElementById('clearFilters').addEventListener('click', () => {
+            // Reset all filters
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+            
+            // Show all logs
+            filterLogs('all');
+            
+            // Reset active tab
+            logTabs.forEach(t => t.classList.remove('tab-active', 'bg-blue-600', 'text-white'));
+            logTabs.forEach(t => t.classList.add('bg-gray-800', 'text-gray-300'));
+            document.querySelector('[data-logtab="all"]').classList.add('tab-active', 'bg-blue-600', 'text-white');
+            document.querySelector('[data-logtab="all"]').classList.remove('bg-gray-800', 'text-gray-300');
+            
+            alert('All filters cleared. Showing all logs.');
+        });
+        
+        // Filter active state
+        document.querySelectorAll('.filter-active').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.toggle('filter-active');
+                this.classList.toggle('bg-blue-900/20');
+                this.classList.toggle('border-blue-700');
+                this.classList.toggle('bg-gray-800/50');
+                this.classList.toggle('border-gray-700');
+                
+                const checkIcon = this.querySelector('.fa-check');
+                if (checkIcon) {
+                    checkIcon.classList.toggle('text-blue-400');
+                    checkIcon.classList.toggle('opacity-0');
+                }
+            });
+        });
+        
+        // Simulate live log streaming
+        setInterval(() => {
+            // This would add new log entries in a real application
+            // For demo, we'll just update the timestamp
+            updateTime();
+        }, 10000);
+    </script>
+</body>
+</html>

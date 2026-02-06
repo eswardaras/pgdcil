@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PGCIL - Threat Intelligence Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .dark-bg {
+            background-color: #0f172a;
+        }
+        .nav-dark {
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+        .card-dark {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .nav-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #3b82f6;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .report-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+        }
+        .report-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .tab-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .severity-critical { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border-left: 4px solid #ef4444; }
+        .severity-high { background-color: rgba(249, 115, 22, 0.1); color: #f97316; border-left: 4px solid #f97316; }
+        .severity-medium { background-color: rgba(234, 179, 8, 0.1); color: #eab308; border-left: 4px solid #eab308; }
+        .severity-low { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; border-left: 4px solid #3b82f6; }
+        .severity-info { background-color: rgba(148, 163, 184, 0.1); color: #94a3b8; border-left: 4px solid #94a3b8; }
+        .status-completed { background-color: rgba(34, 197, 94, 0.1); color: #22c55e; }
+        .status-inprogress { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .status-pending { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .status-failed { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .download-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        .chart-container {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .report-watermark {
+            position: relative;
+        }
+        .report-watermark::before {
+            content: "CONFIDENTIAL";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 80px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.03);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .report-content {
+            position: relative;
+            z-index: 1;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .report-card {
+                border: 1px solid #ccc;
+                box-shadow: none;
+                break-inside: avoid;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body class="dark-bg text-gray-200">
+    <!-- Horizontal Navigation Menu -->
+    <nav class="nav-dark sticky top-0 z-10 no-print">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <!-- Left: Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white">PGCIL Threat Intel</h1>
+                        <p class="text-xs text-gray-400">PowerTel Security</p>
+                    </div>
+                </div>
+
+                <!-- Center: Navigation Links -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="dashboard.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                    </a>
+                    <a href="dashboardOne.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-radar mr-2"></i>Asset Dashboard
+                    </a>
+                    
+                    <a href="user-management.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-users-cog mr-2"></i>User Management
+                    </a>
+                    <a href="reports.html" class="nav-active relative px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-chart-bar mr-2"></i>Reports
+                    </a>
+                    <a href="settings.html" class="relative px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </a>
+                </div>
+
+                <!-- Right: User & Controls -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <button class="relative p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg">
+                            <i class="fas fa-bell"></i>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">2</span>
+                        </button>
+                    </div>
+                    
+                    <div class="hidden md:block h-6 w-px bg-gray-700"></div>
+                    
+                    <div class="flex items-center space-x-2 cursor-pointer" id="userMenu">
+                        <div class="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center">
+                            <i class="fas fa-user text-blue-400"></i>
+                        </div>
+                        <div class="hidden md:block">
+                            <p class="text-sm font-medium">Security Analyst</p>
+                            <p class="text-xs text-gray-400">Report Viewer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- Page Header -->
+        <div class="report-header rounded-xl p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Threat Intelligence Reports</h1>
+                    <p class="text-gray-400 text-sm mt-2">Generate, view, and export security reports and analytics</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center text-sm no-print" id="scheduleReport">
+                        <i class="fas fa-calendar-plus mr-2"></i> Schedule Report
+                    </button>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm no-print" id="generateReport">
+                        <i class="fas fa-plus-circle mr-2"></i> Generate New
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Tabs -->
+        <div class="flex space-x-1 mb-6 overflow-x-auto no-print">
+            <button class="tab-active px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap" data-tab="recent">
+                <i class="fas fa-history mr-2"></i>Recent Reports
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="scheduled">
+                <i class="fas fa-clock mr-2"></i>Scheduled
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="templates">
+                <i class="fas fa-layer-group mr-2"></i>Templates
+            </button>
+            <button class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 whitespace-nowrap" data-tab="export">
+                <i class="fas fa-file-export mr-2"></i>Export History
+            </button>
+        </div>
+
+        <!-- Recent Reports Tab (Active by default) -->
+        <div id="recent-tab" class="tab-content">
+            <!-- Report Statistics -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="report-card rounded-xl p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-white">24</p>
+                            <p class="text-xs text-gray-400">Reports Generated</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center">
+                            <i class="fas fa-file-alt text-blue-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400">
+                        <span class="text-green-400">+3 this week</span>
+                    </div>
+                </div>
+                
+                <div class="report-card rounded-xl p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-white">8</p>
+                            <p class="text-xs text-gray-400">Active Schedules</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-green-900/30 flex items-center justify-center">
+                            <i class="fas fa-clock text-green-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400">
+                        Next: Daily Report (08:00)
+                    </div>
+                </div>
+                
+                <div class="report-card rounded-xl p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-white">142</p>
+                            <p class="text-xs text-gray-400">Total Pages</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center">
+                            <i class="fas fa-copy text-purple-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400">
+                        Across all reports
+                    </div>
+                </div>
+                
+                <div class="report-card rounded-xl p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-2xl font-bold text-white">98.7%</p>
+                            <p class="text-xs text-gray-400">Completion Rate</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-yellow-900/30 flex items-center justify-center">
+                            <i class="fas fa-check-circle text-yellow-400"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400">
+                        <span class="text-green-400">↑ 2.3%</span> from last month
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Reports List -->
+            <div class="report-card rounded-xl p-5 mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-bold text-white">Recent Reports</h2>
+                    <div class="flex space-x-2">
+                        <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option>Last 7 Days</option>
+                            <option>Last 30 Days</option>
+                            <option selected>Last 90 Days</option>
+                            <option>Custom Range</option>
+                        </select>
+                        <select class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option>All Types</option>
+                            <option>Threat Intel</option>
+                            <option>DNS Analytics</option>
+                            <option>Security Audit</option>
+                            <option>Compliance</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- Report 1 -->
+                    <div class="p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition cursor-pointer" onclick="viewReport('weekly-threat')">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-lg bg-red-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-radar text-red-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-white">Weekly Threat Intelligence Report</h3>
+                                    <div class="flex items-center space-x-3 mt-1">
+                                        <span class="text-xs text-gray-400">Generated: Today, 08:00 AM</span>
+                                        <span class="text-xs px-2 py-1 bg-blue-900/30 text-blue-400 rounded">Threat Intel</span>
+                                        <span class="text-xs px-2 py-1 status-completed rounded">Completed</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-400">42 pages</span>
+                                <button class="download-btn px-3 py-1 rounded-lg text-white text-sm flex items-center" onclick="event.stopPropagation(); downloadReport('weekly-threat')">
+                                    <i class="fas fa-download mr-1"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-400">IOC Hits:</span>
+                                <span class="ml-2 font-bold text-white">48</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Critical Alerts:</span>
+                                <span class="ml-2 font-bold text-red-400">3</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">DNS Blocks:</span>
+                                <span class="ml-2 font-bold text-green-400">142</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Generated By:</span>
+                                <span class="ml-2 font-bold text-white">System Auto</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Report 2 -->
+                    <div class="p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition cursor-pointer" onclick="viewReport('dns-analytics')">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-lg bg-blue-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-globe text-blue-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-white">DNS Analytics Monthly Report</h3>
+                                    <div class="flex items-center space-x-3 mt-1">
+                                        <span class="text-xs text-gray-400">Generated: Yesterday, 02:00 AM</span>
+                                        <span class="text-xs px-2 py-1 bg-green-900/30 text-green-400 rounded">DNS Analytics</span>
+                                        <span class="text-xs px-2 py-1 status-completed rounded">Completed</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-400">28 pages</span>
+                                <button class="download-btn px-3 py-1 rounded-lg text-white text-sm flex items-center" onclick="event.stopPropagation(); downloadReport('dns-analytics')">
+                                    <i class="fas fa-download mr-1"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-400">Total Queries:</span>
+                                <span class="ml-2 font-bold text-white">1.2M</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Block Rate:</span>
+                                <span class="ml-2 font-bold text-green-400">98.7%</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Malicious Domains:</span>
+                                <span class="ml-2 font-bold text-red-400">24</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Generated By:</span>
+                                <span class="ml-2 font-bold text-white">System Auto</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Report 3 -->
+                    <div class="p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition cursor-pointer" onclick="viewReport('security-audit')">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-lg bg-yellow-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-shield-alt text-yellow-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-white">Q3 Security Audit Report</h3>
+                                    <div class="flex items-center space-x-3 mt-1">
+                                        <span class="text-xs text-gray-400">Generated: 3 days ago</span>
+                                        <span class="text-xs px-2 py-1 bg-purple-900/30 text-purple-400 rounded">Security Audit</span>
+                                        <span class="text-xs px-2 py-1 status-completed rounded">Completed</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-400">56 pages</span>
+                                <button class="download-btn px-3 py-1 rounded-lg text-white text-sm flex items-center" onclick="event.stopPropagation(); downloadReport('security-audit')">
+                                    <i class="fas fa-download mr-1"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-400">Security Score:</span>
+                                <span class="ml-2 font-bold text-green-400">92%</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Vulnerabilities:</span>
+                                <span class="ml-2 font-bold text-orange-400">12</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Compliance:</span>
+                                <span class="ml-2 font-bold text-green-400">100%</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Generated By:</span>
+                                <span class="ml-2 font-bold text-white">Security Admin</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Report 4 -->
+                    <div class="p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition cursor-pointer" onclick="viewReport('compliance-report')">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-lg bg-green-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-file-contract text-green-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-white">SOC 2 Compliance Report</h3>
+                                    <div class="flex items-center space-x-3 mt-1">
+                                        <span class="text-xs text-gray-400">Generated: 1 week ago</span>
+                                        <span class="text-xs px-2 py-1 bg-blue-900/30 text-blue-400 rounded">Compliance</span>
+                                        <span class="text-xs px-2 py-1 status-completed rounded">Completed</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-400">34 pages</span>
+                                <button class="download-btn px-3 py-1 rounded-lg text-white text-sm flex items-center" onclick="event.stopPropagation(); downloadReport('compliance-report')">
+                                    <i class="fas fa-download mr-1"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-400">Trust Criteria:</span>
+                                <span class="ml-2 font-bold text-white">5/5</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Audit Findings:</span>
+                                <span class="ml-2 font-bold text-green-400">0</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Certification:</span>
+                                <span class="ml-2 font-bold text-green-400">Valid</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Generated By:</span>
+                                <span class="ml-2 font-bold text-white">Compliance Team</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="flex justify-between items-center mt-6 pt-6 border-t border-gray-800">
+                    <div class="text-sm text-gray-400">
+                        Showing 4 of 24 reports
+                    </div>
+                    <div class="flex space-x-1">
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </button>
+                        <button class="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded">1</button>
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded">2</button>
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded">3</button>
+                        <button class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sample Report Viewer -->
+        <div class="report-card rounded-xl p-5 mb-6 report-watermark">
+            <div class="report-content">
+                <!-- Report Header -->
+                <div class="border-b border-gray-800 pb-6 mb-6">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center mb-2">
+                                <div class="w-12 h-12 rounded-lg bg-blue-900/30 flex items-center justify-center mr-4">
+                                    <i class="fas fa-shield-alt text-blue-400 text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h1 class="text-2xl font-bold text-white">Weekly Threat Intelligence Report</h1>
+                                    <p class="text-gray-400">PowerTel Security Operations Center</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-3 mt-4">
+                                <div class="text-sm">
+                                    <span class="text-gray-400">Report ID:</span>
+                                    <span class="ml-2 font-mono text-white">THR-2024-042-WK15</span>
+                                </div>
+                                <div class="text-sm">
+                                    <span class="text-gray-400">Period:</span>
+                                    <span class="ml-2 text-white">April 8-14, 2024</span>
+                                </div>
+                                <div class="text-sm">
+                                    <span class="text-gray-400">Generated:</span>
+                                    <span class="ml-2 text-white">April 15, 2024 08:00 AM IST</span>
+                                </div>
+                                <div class="text-sm">
+                                    <span class="text-gray-400">Classification:</span>
+                                    <span class="ml-2 px-2 py-1 bg-red-900/30 text-red-400 rounded text-xs">CONFIDENTIAL</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <button class="download-btn px-4 py-2 rounded-lg text-white flex items-center mb-3 no-print" onclick="printReport()">
+                                <i class="fas fa-print mr-2"></i> Print Report
+                            </button>
+                            <p class="text-xs text-gray-400">Version 3.2 • Page 1 of 42</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive Summary -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-chart-line text-blue-400 mr-3"></i> Executive Summary
+                    </h2>
+                    <div class="bg-gray-800/30 rounded-lg p-5">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div class="text-center">
+                                <p class="text-4xl font-bold text-white mb-2">48</p>
+                                <p class="text-gray-400">Total IOC Hits</p>
+                                <p class="text-xs text-green-400 mt-1">↓ 12% from last week</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-4xl font-bold text-red-400 mb-2">3</p>
+                                <p class="text-gray-400">Critical Severity Alerts</p>
+                                <p class="text-xs text-red-400 mt-1">↑ 1 from last week</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-4xl font-bold text-green-400 mb-2">98.7%</p>
+                                <p class="text-gray-400">DNS Block Rate</p>
+                                <p class="text-xs text-green-400 mt-1">↑ 0.3% from last week</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-300">
+                            This week's threat intelligence report indicates a moderate level of malicious activity within the PowerTel network. 
+                            While overall IOC hits decreased by 12%, we observed an increase in critical severity alerts. The DNS filtering system 
+                            maintained excellent performance with a 98.7% block rate, preventing 142 malicious domain resolutions. Key focus areas 
+                            this week include monitoring C2 communication attempts and investigating anomalous DNS query patterns.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Threat Analysis -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-radar text-red-400 mr-3"></i> Threat Analysis
+                    </h2>
+                    
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-700">
+                                    <th class="text-left py-3 px-2 text-gray-400">Threat Type</th>
+                                    <th class="text-left py-3 px-2 text-gray-400">Count</th>
+                                    <th class="text-left py-3 px-2 text-gray-400">Trend</th>
+                                    <th class="text-left py-3 px-2 text-gray-400">Top Source</th>
+                                    <th class="text-left py-3 px-2 text-gray-400">Severity</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-800">
+                                <tr>
+                                    <td class="py-3 px-2">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-globe text-red-400 mr-2"></i>
+                                            <span>Malicious Domains</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-2 font-bold">24</td>
+                                    <td class="py-3 px-2">
+                                        <span class="text-red-400">↑ 8%</span>
+                                    </td>
+                                    <td class="py-3 px-2">malware-c2.pwrtel.net</td>
+                                    <td class="py-3 px-2">
+                                        <span class="severity-critical px-2 py-1 rounded text-xs">Critical</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-2">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-server text-orange-400 mr-2"></i>
+                                            <span>C2 Communications</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-2 font-bold">12</td>
+                                    <td class="py-3 px-2">
+                                        <span class="text-green-400">↓ 15%</span>
+                                    </td>
+                                    <td class="py-3 px-2">185.243.115.84</td>
+                                    <td class="py-3 px-2">
+                                        <span class="severity-high px-2 py-1 rounded text-xs">High</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-2">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-envelope text-yellow-400 mr-2"></i>
+                                            <span>Phishing Attempts</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-2 font-bold">8</td>
+                                    <td class="py-3 px-2">
+                                        <span class="text-green-400">↓ 20%</span>
+                                    </td>
+                                    <td class="py-3 px-2">phish.pwrtel-login.com</td>
+                                    <td class="py-3 px-2">
+                                        <span class="severity-medium px-2 py-1 rounded text-xs">Medium</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-2">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-file-contract text-blue-400 mr-2"></i>
+                                            <span>Malware Hashes</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-2 font-bold">4</td>
+                                    <td class="py-3 px-2">
+                                        <span class="text-red-400">↑ 33%</span>
+                                    </td>
+                                    <td class="py-3 px-2">a3f5e8c71b2d...</td>
+                                    <td class="py-3 px-2">
+                                        <span class="severity-high px-2 py-1 rounded text-xs">High</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DNS Analytics -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-globe text-green-400 mr-3"></i> DNS Analytics
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gray-800/30 rounded-lg p-5">
+                            <h3 class="font-bold text-white mb-4">DNS Query Statistics</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-gray-400">Total Queries</span>
+                                        <span class="font-bold">1,248,572</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-blue-500 rounded-full" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-gray-400">Blocked Queries</span>
+                                        <span class="font-bold text-red-400">1,232</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-red-500 rounded-full" style="width: 0.1%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-gray-400">Block Rate</span>
+                                        <span class="font-bold text-green-400">98.7%</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-green-500 rounded-full" style="width: 98.7%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-800/30 rounded-lg p-5">
+                            <h3 class="font-bold text-white mb-4">Top Blocked Domains</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-lg bg-red-900/30 flex items-center justify-center mr-3">
+                                            <i class="fas fa-ban text-red-400"></i>
+                                        </div>
+                                        <span class="truncate">malware-c2.pwrtel.net</span>
+                                    </div>
+                                    <span class="font-bold text-red-400">142 hits</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-lg bg-orange-900/30 flex items-center justify-center mr-3">
+                                            <i class="fas fa-ban text-orange-400"></i>
+                                        </div>
+                                        <span class="truncate">data-exfil.xyz</span>
+                                    </div>
+                                    <span class="font-bold text-orange-400">89 hits</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-lg bg-yellow-900/30 flex items-center justify-center mr-3">
+                                            <i class="fas fa-ban text-yellow-400"></i>
+                                        </div>
+                                        <span class="truncate">phish.pwrtel-login.com</span>
+                                    </div>
+                                    <span class="font-bold text-yellow-400">67 hits</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Recommendations -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-3"></i> Security Recommendations
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="severity-critical p-4 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-red-400 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="font-bold text-white">Immediate Actions Required</h4>
+                                    <ul class="text-sm text-gray-300 mt-2 space-y-1 list-disc list-inside">
+                                        <li>Block IP 185.243.115.84 at firewall level</li>
+                                        <li>Investigate C2 communication from Server-04</li>
+                                        <li>Update threat intelligence feeds immediately</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="severity-high p-4 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-tools text-orange-400 mt-1 mr-3"></i>
+                                <div>
+                                    <h4 class="font-bold text-white">Short-term Improvements</h4>
+                                    <ul class="text-sm text-gray-300 mt-2 space-y-1 list-disc list-inside">
+                                        <li>Enhance DNS monitoring for TLD .xyz queries</li>
+                                        <li>Implement additional authentication logging</li>
+                                        <li>Review and update firewall rule sets</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appendix -->
+                <div class="border-t border-gray-800 pt-6">
+                    <h2 class="text-xl font-bold text-white mb-4">Appendix</h2>
+                    
+                    <div class="bg-gray-800/30 rounded-lg p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <p class="text-gray-400">Report Generated By:</p>
+                                <p class="font-bold text-white">PGCIL Automated Reporting System</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400">Data Sources:</p>
+                                <p class="font-bold text-white">PowerTel DNS Logs, Threat Intel Feeds</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400">Next Report:</p>
+                                <p class="font-bold text-white">April 22, 2024 08:00 AM IST</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-xs text-gray-500">
+                            <p><i class="fas fa-info-circle mr-2"></i> This report contains confidential information. Distribution is restricted to authorized personnel only.</p>
+                            <p class="mt-1"><i class="fas fa-shield-alt mr-2"></i> Report ID: THR-2024-042-WK15 • Classification: CONFIDENTIAL • Retention: 2 years</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Generation Panel -->
+        <div class="report-card rounded-xl p-5 mb-6 no-print">
+            <h2 class="text-lg font-bold text-white mb-4">Generate New Report</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Report Configuration -->
+                <div class="lg:col-span-2">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Report Type</label>
+                            <select class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option>Threat Intelligence Report</option>
+                                <option>DNS Analytics Report</option>
+                                <option>Security Audit Report</option>
+                                <option>Compliance Report</option>
+                                <option>Custom Report</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Start Date</label>
+                                <input type="date" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" value="2024-04-08">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">End Date</label>
+                                <input type="date" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" value="2024-04-14">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Report Format</label>
+                            <div class="flex space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="format" checked class="mr-2">
+                                    <span>PDF</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="format" class="mr-2">
+                                    <span>HTML</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="format" class="mr-2">
+                                    <span>CSV</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="format" class="mr-2">
+                                    <span>JSON</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Include Sections</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" checked class="mr-2">
+                                    <span>Executive Summary</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" checked class="mr-2">
+                                    <span>Threat Analysis</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" checked class="mr-2">
+                                    <span>DNS Analytics</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2">
+                                    <span>Network Traffic</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" checked class="mr-2">
+                                    <span>Security Recommendations</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-2">
+                                    <span>Raw Data</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preview & Generate -->
+                <div class="space-y-6">
+                    <div class="bg-gray-800/30 rounded-lg p-4">
+                        <h3 class="font-bold text-white mb-3">Report Preview</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Estimated Pages:</span>
+                                <span class="font-bold">42</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Data Points:</span>
+                                <span class="font-bold">12,458</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Generation Time:</span>
+                                <span class="font-bold">~45 seconds</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">File Size:</span>
+                                <span class="font-bold">~2.8 MB</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="w-full download-btn py-3 px-4 rounded-lg text-white font-semibold flex items-center justify-center">
+                        <i class="fas fa-play-circle mr-3"></i>
+                        Generate Report Now
+                    </button>
+                    
+                    <button class="w-full bg-gray-800 hover:bg-gray-700 py-3 px-4 rounded-lg text-white font-semibold flex items-center justify-center">
+                        <i class="fas fa-clock mr-3"></i>
+                        Schedule Recurring Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-xs border-t border-gray-800 pt-4">
+            <div class="flex justify-center items-center mb-1">
+                <i class="fas fa-file-alt text-blue-400 mr-2"></i>
+                <p>PGCIL Threat Intelligence Reports • Generated: <span id="current-time"></span></p>
+            </div>
+            <p>24 reports available • 8 scheduled reports • 4 report templates</p>
+        </footer>
+    </div>
+
+    <!-- Report Preview Modal -->
+    <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-900 rounded-2xl p-6 max-w-4xl w-full border border-gray-800 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white" id="modalReportTitle">Report Preview</h3>
+                <button class="text-gray-400 hover:text-white" onclick="closeReportModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="modalReportContent" class="space-y-4">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            
+            <div class="mt-6 pt-6 border-t border-gray-800 flex justify-end space-x-3">
+                <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm" onclick="closeReportModal()">
+                    Close
+                </button>
+                <button class="download-btn px-4 py-2 rounded-lg text-white text-sm flex items-center">
+                    <i class="fas fa-download mr-2"></i> Download Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set current time
+        const now = new Date();
+        document.getElementById('current-time').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // Tab Switching
+        const tabs = document.querySelectorAll('[data-tab]');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('tab-active', 'bg-blue-600', 'text-white'));
+                tabs.forEach(t => t.classList.add('bg-gray-800', 'text-gray-300'));
+                
+                // Add active class to clicked tab
+                tab.classList.remove('bg-gray-800', 'text-gray-300');
+                tab.classList.add('tab-active', 'bg-blue-600', 'text-white');
+                
+                // Hide all tab contents
+                tabContents.forEach(content => content.classList.add('hidden'));
+                
+                // Show selected tab content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.remove('hidden');
+            });
+        });
+        
+        // View Report Function
+        function viewReport(reportId) {
+            const modal = document.getElementById('reportModal');
+            const title = document.getElementById('modalReportTitle');
+            const content = document.getElementById('modalReportContent');
+            
+            // Set report title based on ID
+            const reportTitles = {
+                'weekly-threat': 'Weekly Threat Intelligence Report',
+                'dns-analytics': 'DNS Analytics Monthly Report',
+                'security-audit': 'Q3 Security Audit Report',
+                'compliance-report': 'SOC 2 Compliance Report'
+            };
+            
+            title.textContent = reportTitles[reportId] || 'Report Preview';
+            
+            // Load report content
+            content.innerHTML = `
+                <div class="bg-gray-800/30 rounded-lg p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-16 h-16 rounded-lg bg-blue-900/30 flex items-center justify-center mr-4">
+                            <i class="fas fa-file-alt text-blue-400 text-2xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white text-lg">${reportTitles[reportId]}</h4>
+                            <p class="text-gray-400 text-sm">Preview of report content</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-gray-400 text-sm">Report ID</p>
+                                <p class="font-bold text-white">${reportId.toUpperCase()}-2024-042</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 text-sm">Generated</p>
+                                <p class="font-bold text-white">${new Date().toLocaleDateString()} 08:00 AM</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <p class="text-gray-400 text-sm">Summary</p>
+                            <p class="text-gray-300">
+                                This is a preview of the selected report. The complete report contains detailed analysis,
+                                charts, statistics, and recommendations based on the selected time period and data sources.
+                            </p>
+                        </div>
+                        
+                        <div class="bg-gray-900 rounded-lg p-4">
+                            <p class="text-gray-400 text-sm mb-2">Report Statistics</p>
+                            <div class="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <p class="text-2xl font-bold text-white">42</p>
+                                    <p class="text-xs text-gray-400">Pages</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-blue-400">2.8MB</p>
+                                    <p class="text-xs text-gray-400">File Size</p>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold text-green-400">PDF</p>
+                                    <p class="text-xs text-gray-400">Format</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+        
+        // Close Report Modal
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.add('hidden');
+        }
+        
+        // Download Report Function
+        function downloadReport(reportId) {
+            const reportNames = {
+                'weekly-threat': 'Weekly_Threat_Intelligence_Report',
+                'dns-analytics': 'DNS_Analytics_Monthly_Report',
+                'security-audit': 'Q3_Security_Audit_Report',
+                'compliance-report': 'SOC2_Compliance_Report'
+            };
+            
+            const fileName = `${reportNames[reportId]}_${new Date().toISOString().slice(0,10)}.pdf`;
+            
+            // Show download notification
+            alert(`Downloading: ${fileName}\n\nIn a real application, this would download the PDF report.`);
+            
+            // Simulate download progress
+            showToast('Report Download', `Preparing ${fileName} for download...`, 'info');
+        }
+        
+        // Print Report Function
+        function printReport() {
+            window.print();
+        }
+        
+        // Generate New Report Button
+        document.getElementById('generateReport').addEventListener('click', () => {
+            showToast('Report Generation', 'Generating new report with selected parameters...', 'info');
+            setTimeout(() => {
+                showToast('Report Complete', 'Report generated successfully and ready for download.', 'success');
+            }, 3000);
+        });
+        
+        // Schedule Report Button
+        document.getElementById('scheduleReport').addEventListener('click', () => {
+            showToast('Report Scheduling', 'Opening report scheduler configuration...', 'info');
+        });
+        
+        // Show Toast Notification
+        function showToast(title, message, type) {
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 p-4 rounded-xl border ${
+                type === 'error' 
+                    ? 'bg-red-900/20 border-red-800 text-red-400' 
+                    : type === 'success'
+                    ? 'bg-green-900/20 border-green-800 text-green-400'
+                    : 'bg-blue-900/20 border-blue-800 text-blue-400'
+            } z-50 max-w-md transform translate-x-full opacity-0 transition-all duration-300`;
+            
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle'} mr-3"></i>
+                    <div>
+                        <p class="font-medium">${title}</p>
+                        <p class="text-sm opacity-90 mt-1">${message}</p>
+                    </div>
+                    <button class="ml-auto text-gray-400 hover:text-white" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+                toast.classList.add('translate-x-0', 'opacity-100');
+            }, 10);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.classList.remove('translate-x-0', 'opacity-100');
+                    toast.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => {
+                        if (toast.parentElement) {
+                            toast.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
+        }
+        
+        // Initialize with first tab active
+        document.querySelector('[data-tab="recent"]').classList.add('tab-active', 'bg-blue-600', 'text-white');
+        document.querySelector('[data-tab="recent"]').classList.remove('bg-gray-800', 'text-gray-300');
+    </script>
+</body>
+</html>
